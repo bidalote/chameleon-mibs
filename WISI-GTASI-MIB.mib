@@ -1,0 +1,299 @@
+-- vi:tabstop=8 shiftwidth=0 textwidth=79
+WISI-GTASI-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, OBJECT-TYPE, NOTIFICATION-TYPE, Unsigned32
+		FROM SNMPv2-SMI
+
+	TruthValue, RowStatus
+		FROM SNMPv2-TC
+
+	gtModule, gtChannel
+		FROM WISI-GTMODULES-MIB
+
+	gtIO
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtASIMIB MODULE-IDENTITY
+	LAST-UPDATED "201611110000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the ASI streaming interfaces in a
+		system (rack unit) of a WISI next-generation headend. It
+		provides configuration and measurement information for these
+		interfaces."
+
+	REVISION  "201611110000Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtIO 3 }
+
+--------------------------------------------------------------------------------
+
+gtASINotifications OBJECT IDENTIFIER ::= { gtASIMIB 0 }
+gtASIObjects       OBJECT IDENTIFIER ::= { gtASIMIB 1 }
+gtASIConformance   OBJECT IDENTIFIER ::= { gtASIMIB 2 }
+gtASICompliances   OBJECT IDENTIFIER ::= { gtASIConformance 1 }
+gtASIGroups        OBJECT IDENTIFIER ::= { gtASIConformance 2 }
+
+--============================================================================--
+
+--
+-- Textual conventions.
+--
+
+--============================================================================--
+
+--
+-- Notifications for ASI inputs/outputs.
+--
+
+gtASINotifySyncChanged NOTIFICATION-TYPE
+	OBJECTS { gtASIinSync }
+	STATUS current
+	DESCRIPTION
+		"The gtASINotifySyncChanged notification indicates that a task
+		set up in the task scheduler of an SFM/MFM module within the
+		GT01/GN50 rack unit is being executed."
+::= { gtASINotifications 1 }
+
+
+--============================================================================--
+
+--
+-- Objects describing ASI inputs/outputs, their configurations and statuses.
+--
+
+--
+-- Configuration and status of ASI inputs.
+--
+
+gtASIinTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtASIinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtASIinTable lists information about all the transport
+		streams currently flowing into the modules within the GT01/GN50
+		rack unit."
+::= { gtASIObjects 1 }
+
+gtASIinEntry OBJECT-TYPE
+	SYNTAX GtASIinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtASIinEntry represents an ASI input in the gtASIinTable."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtASIinTable 1 }
+
+GtASIinEntry ::= SEQUENCE {
+	gtASIinRowStatus  RowStatus,
+	gtASIinConnector  Unsigned32,
+	gtASIinSync       TruthValue,
+	gtASIinByteMode   INTEGER,
+	gtASIinBitRate    Unsigned32
+}
+
+gtASIinRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtASIinRowStatus represents the row/entry status of an ASI
+		input stream within the GT01/GN50 rack unit."
+::= { gtASIinEntry 1 }
+
+gtASIinConnector OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIinConnector tells you which BNC connector that an ASI
+		input in an SFM/MFM modules in a GT01/GN50 rack unit is coming
+		in on."
+::= { gtASIinEntry 2 }
+
+gtASIinSync OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtASIinSync tells you if an ASI input in an SFM/MFM
+		module in a GT01/GN50 rack unit has found sync for an input
+		stream."
+::= { gtASIinEntry 3 }
+
+gtASIinByteMode OBJECT-TYPE
+	SYNTAX INTEGER { asi188(1), asi204(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtASIinByteMode represents the number of bytes per packet
+		on the ASI input, 188 or 204 bytes."
+::= { gtASIinEntry 4 }
+
+gtASIinBitRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "bps"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtASIinBitRate represents the currently measured transfer
+		rate in bits per second on an ASI input in an SFM/MFM module in
+		the GT01/GN50 rack unit."
+::= { gtASIinEntry 5 }
+
+--
+-- Configuration and status of ASI outputs.
+--
+
+gtASIoutTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtASIoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutTable lists information about all the transport
+		streams currently flowing out of the modules within the
+		GT01/GN50 rack unit."
+::= { gtASIObjects 2 }
+
+gtASIoutEntry OBJECT-TYPE
+	SYNTAX GtASIoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutEntry represents an ASI output in the gtASIoutTable."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtASIoutTable 1 }
+
+GtASIoutEntry ::= SEQUENCE {
+	gtASIoutRowStatus  RowStatus,
+	gtASIoutConnector  Unsigned32,
+	gtASIoutEnable     INTEGER,
+	gtASIoutByteMode   INTEGER,
+	gtASIoutOutputMode INTEGER,
+	gtASIoutBitRate    Unsigned32
+}
+
+gtASIoutRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtASIinRowStatus entity represents the row/entry status of
+		an ASI input stream within the GT01/GN50 rack unit."
+::= { gtASIoutEntry 1 }
+
+gtASIoutConnector OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutConnector tells you which BNC connector an ASI
+		output in an SFM/MFM modules in a GT01/GN50 rack unit is output
+		on."
+::= { gtASIoutEntry 2 }
+
+gtASIoutEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), active(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutEnable represents whether or not the ASI output in
+		an SFM/MFM module in the GT01/GN50 rack unit is enabled."
+::= { gtASIoutEntry 3 }
+
+gtASIoutByteMode OBJECT-TYPE
+	SYNTAX INTEGER { asi188(1), asi204(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutByteMode represents the number of bytes per packet
+		on the ASI output, 188 or 204 bytes."
+::= { gtASIoutEntry 4 }
+
+gtASIoutOutputMode OBJECT-TYPE
+	SYNTAX INTEGER { burst(1), continuous(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutOutputMode controls if the output should transmit
+		in burst mode or continuous mode."
+::= { gtASIoutEntry 5 }
+
+gtASIoutBitRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "bps"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtASIoutBitRate controls the bit rate for an ASI output in
+		an SFM/MFM module in the GT01/GN50 rack unit."
+::= { gtASIoutEntry 6 }
+
+
+--============================================================================--
+
+--
+-- Compliance groups for the ASI MIB.
+--
+
+gtGeneralASIGroup OBJECT-GROUP
+	OBJECTS {
+		gtASIinRowStatus,
+		gtASIinConnector,
+		gtASIinSync,
+		gtASIinByteMode,
+		gtASIinBitRate,
+		gtASIoutRowStatus,
+		gtASIoutConnector,
+		gtASIoutEnable,
+		gtASIoutByteMode,
+		gtASIoutOutputMode,
+		gtASIoutBitRate
+	}
+	STATUS current
+	DESCRIPTION
+		"The general ASI group contains the configuration and status
+		objects for ASI inputs and outputs."
+::= { gtASIGroups 1 }
+
+gtGeneralASINotificationsGroup NOTIFICATION-GROUP
+	NOTIFICATIONS {
+		gtASINotifySyncChanged
+	}
+	STATUS current
+	DESCRIPTION
+		"The general ASI notifications group contains the basic ASI
+		notifications that should be implemented by all devices with
+		ASI inputs and/or outputs."
+::= { gtASIGroups 2 }
+
+gtTSBasicCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+		"The compliance statement for Wisi agents that have ASI inputs
+		and/or outputs in GT01/GN50 rack units and/or SFM/MFM modules."
+	MODULE -- This module.
+		MANDATORY-GROUPS {
+			gtGeneralASIGroup,
+			gtGeneralASINotificationsGroup
+		}
+::= { gtASICompliances 1 }
+
+END

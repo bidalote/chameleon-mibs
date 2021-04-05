@@ -1,0 +1,517 @@
+
+WISI-GTDECODE-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	Unsigned32
+		FROM SNMPv2-SMI
+
+	gtProcessing
+		FROM WISI-TANGRAM-MIB
+
+	DisplayString
+		FROM SNMPv2-TC
+
+	gtModule
+		FROM WISI-GTMODULES-MIB;
+
+--------------------------------------------------------------------------------
+
+gtDecodeMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the digital to analog video decoders
+		in a system (rack unit) of a WISI next-generation headend. It
+		provides configuration and measurement information for these
+		decoders."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Added OSD and test pattern objects and removed decode channels object.
+		Updated contact information and module description."
+	REVISION "201212041200Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtProcessing 3 }
+
+--------------------------------------------------------------------------------
+
+gtDecodeNotifications OBJECT IDENTIFIER ::= { gtDecodeMIB 0 }
+gtDecodeObjects OBJECT IDENTIFIER ::= { gtDecodeMIB 1 }
+gtDecodeConformance OBJECT IDENTIFIER ::= { gtDecodeMIB 2 }
+gtDecodeCompliances OBJECT IDENTIFIER ::= { gtDecodeConformance 1 }
+gtDecodeGroups OBJECT IDENTIFIER ::= { gtDecodeConformance 2 }
+
+--============================================================================--
+
+gtDecodeNotifyVideoDecodingChanged NOTIFICATION-TYPE
+	OBJECTS { gtDecodeVideoStatus }
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeNotifyVideoDecodingChanged notification indicates that
+		the video decoding status has changed."
+::= { gtDecodeNotifications 1 }
+
+gtDecodeNotifyAudioDecodingChanged NOTIFICATION-TYPE
+	OBJECTS { gtDecodeAudioStatus }
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeNotifyAudioDecodingChanged notification indicates that
+		the audio decoding status has changed."
+::= { gtDecodeNotifications 2 }
+
+--============================================================================--
+
+gtDecodeTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDecodeEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeTable table contains a list of all
+		decoders within the GT01/GN50 rack unit."
+::= { gtDecodeObjects 2 }
+
+gtDecodeEntry OBJECT-TYPE
+	SYNTAX GtDecodeEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeEntry table entry represents a
+		decoder instance within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtDecodeTableIdx
+	}
+::= { gtDecodeTable 1 }
+
+GtDecodeEntry ::= SEQUENCE {
+	gtDecodeTableIdx Unsigned32,
+	gtDecodeSourceID Unsigned32,
+	gtDecodeSID Unsigned32,
+        gtDecodePCRPIDConf Unsigned32,
+	gtDecodeVideoDecoderOut INTEGER,
+	gtDecodeVideoConversion INTEGER,
+	gtDecodeVideoPIDConf Unsigned32,
+	gtDecodeVideoTypeConf INTEGER,
+	gtDecodeAudioLangConf DisplayString,
+	gtDecodeAudioPIDConf Unsigned32,
+	gtDecodeAudioStereoConf INTEGER,
+	gtDecodeAudioTypeConf INTEGER,
+	gtDecodeSubtitlingEnable INTEGER,
+	gtDecodeSubtitlingLangConf DisplayString,
+	gtDecodeSubtitlingPriority INTEGER,
+	gtDecodeSubtitlingTypeConf INTEGER,
+	gtDecodeSubtitlingCodepage Unsigned32,
+	gtDecodeSubtitlingConvConf INTEGER,
+	gtDecodeWSSConf INTEGER,
+	gtDecodeWSSSubtitlingConf INTEGER,
+	gtDecodeVPSConf INTEGER,
+	gtDecodeVPSCNI Unsigned32,
+	gtDecodeOSDEnable INTEGER,
+	gtDecodeOSDSelect INTEGER,
+	gtDecodeTestPatternEnable INTEGER,
+        gtDecodePCRPID Unsigned32,
+	gtDecodeVideoStatus INTEGER,
+	gtDecodeVideoPID Unsigned32,
+	gtDecodeVideoType INTEGER,
+	gtDecodeAspectRatio INTEGER,
+	gtDecodeVideoError INTEGER,
+	gtDecodeAudioStatus INTEGER,
+	gtDecodeAudioPID Unsigned32,
+	gtDecodeAudioType INTEGER,
+	gtDecodeAudioMode INTEGER,
+	gtDecodeSubtitlingState INTEGER,
+	gtDecodeSubtitlingDVBPID Unsigned32,
+	gtDecodeSubtitlingDVBComposition Unsigned32,
+	gtDecodeSubtitlingDVBAncillary Unsigned32,
+	gtDecodeSubtitlingTTXPID Unsigned32,
+	gtDecodeSubtitlingTTXMagazine Unsigned32,
+	gtDecodeSubtitlingTTXPage Unsigned32
+}
+
+gtDecodeTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..256)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeTableIdx entity represents the numeric index
+		of an decoder on a SFM/MFM module."
+::= { gtDecodeEntry 1 }
+
+gtDecodeSourceID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSourceID entity represents the input ID for the
+		service to decode of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 2 }
+
+gtDecodeSID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSID entity represents the service ID (SID)
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 3 }
+
+gtDecodePCRPIDConf OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodePCRPIDConf entity represents the forced PCR PID
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 4 }
+
+gtDecodeVideoDecoderOut OBJECT-TYPE
+	SYNTAX INTEGER { ntsc(1), pal525(2), pal625(3), secamh(4), secamv(5), hd720p50(6), hd720p60(7), hd1080i50(8), hd1080i60(9) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoDecoderOut entity represents the video mode
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 10 }
+
+gtDecodeVideoConversion OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), ignore(2), letterbox(3), panscan(4), combined(5), forced(6) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoConversion entity represents the video conversion
+		mode of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 11 }
+
+gtDecodeVideoPIDConf OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoPIDConf entity represents the forced video PID
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 12 }
+
+gtDecodeVideoTypeConf OBJECT-TYPE
+	SYNTAX INTEGER { mpeg2(1), mpeg4p2(2), h264(3), vc1(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoTypeConf entity represents the forced video
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 13 }
+
+gtDecodeAudioLangConf OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (3))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioLangConf entity represents the prefered audio
+		language of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 20 }
+
+gtDecodeAudioPIDConf OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioPIDConf entity represents the forced audio PID
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 21 }
+
+gtDecodeAudioStereoConf OBJECT-TYPE
+	SYNTAX INTEGER { stereo(1), dualLeft(2), dualRight(3), prologic(4), dualMono(5) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoTypeConf entity represents the forced stereo
+		mode of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 22 }
+
+gtDecodeAudioTypeConf OBJECT-TYPE
+	SYNTAX INTEGER { mpeg1(1), heAAC(2), mpegAAC(3), mpeg2(4), ac3(5), eac3(6), dts(7) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioTypeConf entity represents the forced audio
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 23 }
+
+gtDecodeSubtitlingEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), active(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingEnable entity represents the enabling of
+		subtitling of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 30 }
+
+gtDecodeSubtitlingLangConf OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (3))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingLangConf entity represents the prefered
+		subtitling language of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 31 }
+
+gtDecodeSubtitlingPriority OBJECT-TYPE
+	SYNTAX INTEGER { dvb(1), teletext(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingPriority entity represents the prioritized
+		subtitling type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 32 }
+
+gtDecodeSubtitlingTypeConf OBJECT-TYPE
+	SYNTAX INTEGER { normal(1), hearingImpaired(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingTypeConf entity represents the forced subtitling
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 33 }
+
+gtDecodeSubtitlingCodepage OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingCodepage entity represents the teletext codepage
+		for subtitling of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 34 }
+
+gtDecodeSubtitlingConvConf OBJECT-TYPE
+	SYNTAX INTEGER { none(1), auto(2), conv14to9(3), conv16to9(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingConvConf entity represents the forced subtitling
+		conversion of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 35 }
+
+gtDecodeWSSConf OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), off(2), force4to3(3), force14to9(4), force16to9(5) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeWSSConf entity represents the forced WSS configuration
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 40 }
+
+gtDecodeWSSSubtitlingConf OBJECT-TYPE
+	SYNTAX INTEGER { off(1), auto(2), inpicture(3), outofpicture(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeWSSSubtitlingConf entity represents the forced WSS subtitling
+		signaling of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 41 }
+
+gtDecodeVPSConf OBJECT-TYPE
+	SYNTAX INTEGER { off(1), ttx(2), eit(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVPSConf entity represents the VPS configuration
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 50 }
+
+gtDecodeVPSCNI OBJECT-TYPE
+	SYNTAX Unsigned32 ( 0..65535 )
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVPSCNI entity represents the VPS CNI number in case of
+		VPS from EIT of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 51 }
+
+gtDecodeOSDEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), enabled(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeOSDEnable entity represents whether or not the OSD message
+		is enabled on the decoder output within the GT01/GN50."
+::= { gtDecodeEntry 55 }
+
+gtDecodeOSDSelect OBJECT-TYPE
+	SYNTAX INTEGER { text1(1), text2(2), text3(3), wisiLogo(4), userLogo(5) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeOSDSelect entity represents which OSD message is
+		currently selected for the decoder to render on its output, when
+		OSD is enabled."
+::= { gtDecodeEntry 62 }
+
+gtDecodeTestPatternEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), enabled(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeTestPatternEnable entity represents whether or not the
+		test pattern is enabled on the decoder output within the GT01/GN50."
+::= { gtDecodeEntry 70 }
+
+gtDecodePCRPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodePCRPID entity represents the currently PCR PID
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 100 }
+
+gtDecodeVideoStatus OBJECT-TYPE
+	SYNTAX INTEGER { notrunning(1), running(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoStatus entity represents the video running status
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 110 }
+
+gtDecodeVideoPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoPID entity represents the video PID in use
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 111 }
+
+gtDecodeVideoType OBJECT-TYPE
+	SYNTAX INTEGER { mpeg2(1), mpeg4p2(2), h264(3), vc1(4) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoType entity represents the video PID in use
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 112 }
+
+gtDecodeAspectRatio OBJECT-TYPE
+	SYNTAX INTEGER { unknown(1), a4to3(2), a16to9(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAspectRatio entity represents the incoming videos
+		aspect ratio of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 113 }
+
+gtDecodeVideoError OBJECT-TYPE
+	SYNTAX INTEGER { noerror(1), hdandsd(2), nothdcapable(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeVideoError entity represents the video error status
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 114 }
+
+gtDecodeAudioStatus OBJECT-TYPE
+	SYNTAX INTEGER { notrunning(1), running(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioStatus entity represents the audio running status
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 120 }
+
+gtDecodeAudioPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioPID entity represents the audio PID in use
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 121 }
+
+gtDecodeAudioType OBJECT-TYPE
+	SYNTAX INTEGER { mpeg1(1), heaac(2), mpegaac(3), mpeg2(4) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioType entity represents the audio PID in use
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 122 }
+
+gtDecodeAudioMode OBJECT-TYPE
+	SYNTAX INTEGER { stereo(1), dualLeft(2), dualRight(3), prologic(4), dualMono(5) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeAudioMode entity represents the type of audio
+		currently decoding on the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 123 }
+
+gtDecodeSubtitlingState OBJECT-TYPE
+	SYNTAX INTEGER { off(1), teletext(2), dvb(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingState entity represents the current subtitling
+		state of the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 130 }
+
+gtDecodeSubtitlingDVBPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingDVBPID entity represents the current DVB subtitling
+		PID in use on a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 131 }
+
+gtDecodeSubtitlingDVBComposition OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingDVBComposition entity represents the DVB subtitling
+		composition in use on the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 132 }
+
+gtDecodeSubtitlingDVBAncillary OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingDVBAncillary entity represents the DVB subtitling
+		ancillary in use on the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 133 }
+
+gtDecodeSubtitlingTTXPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingTTXPID entity represents the current teletext
+		subtitling PID in use on a decoder within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 134 }
+
+gtDecodeSubtitlingTTXMagazine OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingTTXMagazine entity represents the teletext
+		magazine in use on the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 135 }
+
+gtDecodeSubtitlingTTXPage OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDecodeSubtitlingTTXMagazine entity represents the teletext
+		page in use on the decoder output within the GT01/GN50 rack unit."
+::= { gtDecodeEntry 136 }
+
+--============================================================================--
+END
+

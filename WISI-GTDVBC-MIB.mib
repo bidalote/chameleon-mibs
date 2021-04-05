@@ -1,0 +1,318 @@
+
+WISI-GTDVBC-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	IpAddress, Unsigned32
+		FROM SNMPv2-SMI
+
+	FloatingPoint
+		FROM WISI-TANGRAM-MIB
+
+	RowStatus
+		FROM SNMPv2-TC
+
+	gtModule, gtChannel
+		FROM WISI-GTMODULES-MIB
+
+	gtDVB
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtDVBCMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the DVB-C streaming interfaces in a
+		system (rack unit) of a WISI next-generation headend. It
+		provides configuration and measurement information for these
+		interfaces."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Added QAM spectrum object, removed in/out channels and in enable
+		objects. Updated contact information and module description."
+	REVISION "201312170000Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtDVB 1 }
+
+--------------------------------------------------------------------------------
+
+gtDVBCNotifications OBJECT IDENTIFIER ::= { gtDVBCMIB 0 }
+gtDVBCObjects OBJECT IDENTIFIER ::= { gtDVBCMIB 1 }
+gtDVBCConformance OBJECT IDENTIFIER ::= { gtDVBCMIB 2 }
+gtDVBCCompliances OBJECT IDENTIFIER ::= { gtDVBCConformance 1 }
+gtDVBCGroups OBJECT IDENTIFIER ::= { gtDVBCConformance 2 }
+
+--============================================================================--
+
+gtDVBCNotifyLockedChanged NOTIFICATION-TYPE
+	OBJECTS { gtDVBCinLocked }
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCNotifyLockedChanged notification indicates that
+		the tuner locked status has changed."
+::= { gtDVBCNotifications 1 }
+
+gtDVBCNotifyLevelChanged NOTIFICATION-TYPE
+	OBJECTS { gtDVBCoutLevel }
+	STATUS current
+	DESCRIPTION
+		"The gtPALNotifyLevelChanged notification indicates that
+		the carrier level of the PAL output has changed."
+::= { gtDVBCNotifications 2 }
+
+--============================================================================--
+
+gtDVBCinTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDVBCinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinTable table contains a list of all
+		DVB-C input streams within the GT01/GN50 rack unit."
+::= { gtDVBCObjects 2 }
+
+gtDVBCinEntry OBJECT-TYPE
+	SYNTAX GtDVBCinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinEntry table entry represents an
+		DVB-C input stream within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtDVBCinTable 1 }
+
+GtDVBCinEntry ::= SEQUENCE {
+	gtDVBCinRowStatus RowStatus,
+	gtDVBCinConnector Unsigned32,
+	gtDVBCinLocked INTEGER,
+	gtDVBCinLevel FloatingPoint,
+	gtDVBCinSNR FloatingPoint,
+	gtDVBCinBER FloatingPoint,
+	gtDVBCinFrequency Unsigned32,
+	gtDVBCinSymbolrate Unsigned32,
+	gtDVBCinModulation INTEGER
+}
+
+gtDVBCinRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinRowStatus entity represents the row/entry status
+		of an DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 1 }
+
+gtDVBCinConnector OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4)
+	UNITS "Connector"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinConnector entity represents the ID of the physical
+		connector used for a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 2 }
+
+gtDVBCinLocked OBJECT-TYPE
+	SYNTAX INTEGER { unlocked(1), locked(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinLocked entity represent the locked status
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 3 }
+
+gtDVBCinLevel OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dBm"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinLevel entity represent the current RF level
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 4 }
+
+gtDVBCinSNR OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dB"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinSNR entity represent the Signal to Noise Ratio
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 5 }
+
+gtDVBCinBER OBJECT-TYPE
+	SYNTAX FloatingPoint
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinSNR entity represent the Signal to Noise Ratio
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 7 }
+
+gtDVBCinFrequency OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "kHz"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinFrequency entity represent the frequency setting
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 11 }
+
+gtDVBCinSymbolrate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "Bd"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinSymbolrate entity represent the symbolrate (in baud)
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 13 }
+
+gtDVBCinModulation OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), qam16(16), qam32(32), qam64(64), qam128(128), qam256(256) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCinModulation entity represent the modulation
+		of a DVB-C input stream within the GT01/GN50 rack unit."
+::= { gtDVBCinEntry 14 }
+
+--============================================================================--
+
+gtDVBCoutTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDVBCoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutTable table contains a list of all
+		DVB-C input streams within the GT01/GN50 rack unit."
+::= { gtDVBCObjects 4 }
+
+gtDVBCoutEntry OBJECT-TYPE
+	SYNTAX GtDVBCoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutEntry table entry represents an
+		DVB-C input stream within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtDVBCoutTable 1 }
+
+GtDVBCoutEntry ::= SEQUENCE {
+	gtDVBCoutRowStatus RowStatus,
+	gtDVBCoutConnector Unsigned32,
+        gtDVBCoutEnable INTEGER,
+	gtDVBCoutConfigLevel Unsigned32,
+        gtDVBCoutLevel FloatingPoint,
+	gtDVBCoutFrequency Unsigned32,
+	gtDVBCoutSymbolrate Unsigned32,
+	gtDVBCoutConstellation INTEGER,
+	gtDVBCoutQAMSpectrum INTEGER
+}
+
+gtDVBCoutRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutRowStatus entity represents the row/entry status
+		of an DVB-C output stream within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 1 }
+
+gtDVBCoutConnector OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4)
+	UNITS "Connector"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutConnector entity represents the ID of the physical
+		connector used for a DVB-C output stream within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 2 }
+
+gtDVBCoutEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), active(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutEnable entity represents the enable setting
+		of a DVBC channel within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 3 }
+
+gtDVBCoutConfigLevel OBJECT-TYPE
+	SYNTAX Unsigned32 (1..1000)
+	UNITS "1/10 dBuV"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutConfigLevel entity represents the configured
+		output level of a DVBC channel within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 5 }
+
+gtDVBCoutLevel OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dBuV"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutLevel entity represents the measured RF level
+		of a DVBC channel within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 6 }
+
+gtDVBCoutFrequency OBJECT-TYPE
+	SYNTAX Unsigned32 (87500..108000)
+	UNITS "kHz"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutFrequency entity represents the output frequency
+		of a DVBC channel within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 8 }
+
+gtDVBCoutSymbolrate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "kBd"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutSymbolrate entity represent the symbolrate (in kBaud)
+		of a DVB-C output stream within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 10 }
+
+gtDVBCoutConstellation OBJECT-TYPE
+	SYNTAX INTEGER { qam16(16), qam32(32), qam64(64), qam128(128), qam256(256) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutModulation entity represent the modulation
+		of a DVB-C output stream within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 11 }
+
+gtDVBCoutQAMSpectrum OBJECT-TYPE
+	SYNTAX INTEGER { normal(1), inverted(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBCoutQAMSpectrum entity represent the QAM spectrum of
+		a DVB-C output stream within the GT01/GN50 rack unit."
+::= { gtDVBCoutEntry 12 }
+
+--============================================================================--
+END

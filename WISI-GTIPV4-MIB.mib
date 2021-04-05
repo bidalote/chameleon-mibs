@@ -1,0 +1,758 @@
+
+WISI-GTIPV4-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	IpAddress, Unsigned32
+		FROM SNMPv2-SMI
+
+	RowStatus, TruthValue
+		FROM SNMPv2-TC
+
+	gtModule, gtChannel
+		FROM WISI-GTMODULES-MIB
+
+	gtIP
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtIPv4MIB MODULE-IDENTITY
+	LAST-UPDATED "201611140000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the IPv4 streaming interfaces in a
+		system (rack unit) of a WISI next-generation headend. It
+		provides configuration and measurement information for these
+		interfaces."
+
+	REVISION "201611140000Z"
+	DESCRIPTION
+		"Enabled IPv4 output table and revised its contents. Renamed
+		gtIPv4inDataRate to gtIPv4inBitRate, gtIPv4inNet to
+		gtIPv4inInterface and removed various objects that lack
+		implementation. Added manual bit rate setting for the manual
+		bit rate input mode."
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Added objects for bit rate mode, source address, linger time,
+		latency and status of IPv4 inputs and made it possible to add
+		alternative IPv4 input configurations. Removed in channels, in
+		FIFO and in enable objects. Updated contact information and
+		module description."
+	REVISION "201512210000Z"
+	DESCRIPTION
+		"Added gtIPv4inPLpre and gtIPv4inPLpost"
+	REVISION "201211290000Z"
+	DESCRIPTION
+		"Added FEC status values and traps."
+	REVISION "201210310000Z"
+	DESCRIPTION
+		"Added alternative configurations for IPv4in.
+		Removed IPv4out for now."
+	REVISION "201112151200Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtIP 1 }
+
+--------------------------------------------------------------------------------
+
+gtIPv4Notifications OBJECT IDENTIFIER ::= { gtIPv4MIB 0 }
+gtIPv4Objects OBJECT IDENTIFIER ::= { gtIPv4MIB 1 }
+gtIPv4Conformance OBJECT IDENTIFIER ::= { gtIPv4MIB 2 }
+gtIPv4Compliances OBJECT IDENTIFIER ::= { gtIPv4Conformance 1 }
+gtIPv4Groups OBJECT IDENTIFIER ::= { gtIPv4Conformance 2 }
+
+--============================================================================--
+
+gtIPv4NotifyBitrateDrop NOTIFICATION-TYPE
+	OBJECTS { gtIPv4inBitRate }
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4NotifyBitrateDrop notification indicates that
+		the bitrate of a running IPv4 CBR input has dropped."
+::= { gtIPv4Notifications 1 }
+
+gtIPv4NotifyActiveConfigChanged NOTIFICATION-TYPE
+	OBJECTS { gtIPv4inActiveConfig }
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4NotifyActiveConfigChanged notification indicates that
+		the active configuration of a running IPv4 input has changed."
+::= { gtIPv4Notifications 2 }
+
+gtIPv4NotifyPLRpreChanged NOTIFICATION-TYPE
+	OBJECTS { gtIPv4inPLRpre }
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4NotifyPLRpreChanged notification indicates that
+		the gtIPv4inPLRpre status value has changed from zero value."
+::= { gtIPv4Notifications 3 }
+
+gtIPv4NotifyPLRpostChanged NOTIFICATION-TYPE
+	OBJECTS { gtIPv4inPLRpost }
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4NotifyPLRpostChanged notification indicates that
+		the gtIPv4inPLRpost status value has changed from zero value."
+::= { gtIPv4Notifications 4 }
+
+--============================================================================--
+
+gtIPv4inTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtIPv4inEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inTable table contains a list of all
+		IPv4 input streams within the GT01/GN50 rack unit."
+::= { gtIPv4Objects 2 }
+
+gtIPv4inEntry OBJECT-TYPE
+	SYNTAX GtIPv4inEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inEntry table entry represents an
+		IPv4 input stream within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtIPv4inTable 1 }
+
+GtIPv4inEntry ::= SEQUENCE {
+	gtIPv4inRowStatus RowStatus,
+	gtIPv4inBitRate Unsigned32,
+	gtIPv4inPLRpre Unsigned32,
+	gtIPv4inPLRpost Unsigned32,
+	gtIPv4inInterface Unsigned32,
+	gtIPv4inAddress IpAddress,
+	gtIPv4inPort Unsigned32,
+	gtIPv4inProtocol INTEGER,
+	gtIPv4inFECcolumn Unsigned32,
+	gtIPv4inFECrow Unsigned32,
+	gtIPv4inFECMode INTEGER,
+	gtIPv4inRedundancyMode INTEGER,
+	gtIPv4inActiveConfig Unsigned32,
+	gtIPv4inPLpre Unsigned32,
+	gtIPv4inPLpost Unsigned32,
+	gtIPv4inBitRateMode INTEGER,
+	gtIPv4inSourceAddress IpAddress,
+	gtIPv4inLingerTime Unsigned32,
+	gtIPv4inLatency Unsigned32,
+	gtIPv4inStatus INTEGER,
+	gtIPv4inPLpreReset TruthValue,
+	gtIPv4inPLpostReset TruthValue,
+	gtIPv4inManualBitRate Unsigned32
+}
+
+gtIPv4inRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inRowStatus entity represents the row/entry status
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 1 }
+
+gtIPv4inBitRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "bps"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inBitRate entity represents the TS bit rate of an
+		IPv4 input stream within the GT01/GN50 rack unit. I.e., the
+		data rate for all data, both including payload data and any
+		protocol overhead etc."
+::= { gtIPv4inEntry 2 }
+
+gtIPv4inPLRpre OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "pps"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLRpre entity represents the packet lost rate
+		before performing a 2D FEC (Forward Error Correction) of an
+		IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 5 }
+
+gtIPv4inPLRpost OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "pps"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLRpost entity represents the packet lost rate
+		after performing a 2D FEC (Forward Error Correction) of an IPv4
+		input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 6 }
+
+gtIPv4inInterface OBJECT-TYPE
+	SYNTAX Unsigned32 (1..31)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inInterface entity represents the gtInterfaceNumber
+		of the network interface within the GT01/GN50 rack unit into
+		which this IPv4 output stream is flowing."
+::= { gtIPv4inEntry 13 }
+
+gtIPv4inAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAddress entity represents the IP address
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 14 }
+
+gtIPv4inPort OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPort entity represents the IP port
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 15 }
+
+gtIPv4inProtocol OBJECT-TYPE
+	SYNTAX INTEGER { udp(1), rtp(2), rtpFec(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inProtocol entity represents the detected IP protocol
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 16 }
+
+gtIPv4inFECcolumn OBJECT-TYPE
+	SYNTAX Unsigned32 (0..20)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inFECcolumn entity represents the FEC column
+		configuration, also known as the FEC L parameter, of an IPv4
+		input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 17 }
+
+gtIPv4inFECrow OBJECT-TYPE
+	SYNTAX Unsigned32 (0..20)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inFECrow entity represents the FEC row
+		configuration, also known as the FEC D parameter, of an IPv4
+		input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 18 }
+
+gtIPv4inFECMode OBJECT-TYPE
+	SYNTAX INTEGER { column(1), columnRow(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inFECMode entity represents the FEC mode to use on
+		an IPv4 input stream within the GT01/GN50 rack unit. This only
+		has effect if the input protocol is set to RTP+FEC and can be
+		either column or column + row."
+::= { gtIPv4inEntry 19 }
+
+gtIPv4inRedundancyMode OBJECT-TYPE
+	SYNTAX INTEGER { off(0), on(1) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4in entity represents the redundancy configuration
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 22 }
+
+gtIPv4inActiveConfig OBJECT-TYPE
+	SYNTAX Unsigned32 (0..256)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4in entity represents the active configuration set
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 23 }
+
+gtIPv4inPLpre OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLRpre entity represents the total number of
+		packets lost before performing an 2D FEC (Forward Error
+		Correction) of an IPv4 input stream within the GT01/GN50 rack
+		unit."
+::= { gtIPv4inEntry 24 }
+
+gtIPv4inPLpost OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLRpost entity represents the total number of
+		packets lost after performing an 2D FEC (Forward Error
+		Correction) of an IPv4 input stream within the GT01/GN50 rack
+		unit."
+::= { gtIPv4inEntry 25 }
+
+gtIPv4inBitRateMode OBJECT-TYPE
+	SYNTAX INTEGER { cbr(1), vbr(2), manual(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inBitRateMode entity represents the bit rate mode
+		of an IPv4 input stream within the GT01/GN50 rack unit."
+::= { gtIPv4inEntry 26 }
+
+gtIPv4inSourceAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inSourceAddress entity represents the IP address of
+		the source of an IPv4 input stream."
+::= { gtIPv4inEntry 27 }
+
+gtIPv4inLingerTime OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	UNITS "s"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inLingerTime entity represents the time to wait for
+		an IPv4 input stream on the interface before switching over
+		to an alternate interface in the redundancy group. The value of
+		this entity has no effect if this input's redundancy mode is off."
+::= { gtIPv4inEntry 28 }
+
+gtIPv4inLatency OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	UNITS "s"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inLatency entity represents the time after which we
+		expect an IPv4 input stream to be present after switching over
+		to an interface in the redundancy group. The value of this
+		entity has no effect if this input's redundancy mode is off."
+::= { gtIPv4inEntry 29 }
+
+gtIPv4inStatus OBJECT-TYPE
+	SYNTAX INTEGER { noError(1), typeUnavailInMode(2),
+		invalidTypespecID(3), typeMaxReached(4), invalidParameter(5),
+		conflictingParameter(6), generalError(7), sourceNotReady(8),
+		dstNotReady(9), freqOutOfRange(10), outOfResources(11),
+		limitedIPMaxReached(12)
+	}
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inStatus entity represents the current status message
+		for an interface."
+::= { gtIPv4inEntry 30 }
+
+gtIPv4inPLpreReset OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLpre is reset to zero if this object is set to 'true'."
+::= { gtIPv4inEntry 31 }
+
+gtIPv4inPLpostReset OBJECT-TYPE
+	SYNTAX TruthValue
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inPLpost is reset to zero if this object is set to 'true'."
+::= { gtIPv4inEntry 32 }
+
+gtIPv4inManualBitRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "bps"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inManualBitRate entity represents the target TS bit
+		rate of an IPv4 input stream within the GT01/GN50 rack unit
+		that has gtIPv4inBitRateMode = manual(3)."
+::= { gtIPv4inEntry 33 }
+
+--------------------------------------------------------------------------------
+
+gtIPv4outTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtIPv4outEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outTable table contains a list of all IPv4 output
+		streams within the GT01/GN50 rack unit."
+::= { gtIPv4Objects 4 }
+
+gtIPv4outEntry OBJECT-TYPE
+	SYNTAX GtIPv4outEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outEntry table entry represents an IPv4 output
+		stream within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtIPv4outTable 1 }
+
+GtIPv4outEntry ::= SEQUENCE {
+	gtIPv4outRowStatus RowStatus,
+	gtIPv4outBitRate Unsigned32,
+	gtIPv4outPacketsPerDatagram Unsigned32,
+	gtIPv4outBitRateMode INTEGER,
+	gtIPv4outEnable INTEGER,
+	gtIPv4outInterface Unsigned32,
+	gtIPv4outAddress IpAddress,
+	gtIPv4outPort Unsigned32,
+	gtIPv4outProtocol INTEGER,
+	gtIPv4outFECcolumn Unsigned32,
+	gtIPv4outFECrow Unsigned32,
+	gtIPv4outFECMode INTEGER,
+	gtIPv4outTTL Unsigned32,
+	gtIPv4outTOS Unsigned32
+}
+
+gtIPv4outRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outRowStatus entity represents the row/entry status
+		of an IPv4 output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 1 }
+
+gtIPv4outBitRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "bps"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outBitRate entity represents the TS bit rate of an
+		IPv4 output stream within the GT01/GN50 rack unit. I.e., the
+		data rate for all data, both including payload data and any
+		protocol overhead etc."
+::= { gtIPv4outEntry 2 }
+
+gtIPv4outPacketsPerDatagram OBJECT-TYPE
+	SYNTAX Unsigned32 (1..7)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outPacketsPerDatagram entity represents the number
+		of TS packets per UDP/RTP datagram an IPv4 output stream within
+		the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 3 }
+
+gtIPv4outBitRateMode OBJECT-TYPE
+	SYNTAX INTEGER { cbr(1), vbr(2), vbrCapped(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outBitRateMode entity represents the TS bit rate
+		mode of an IPv4 output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 4 }
+
+gtIPv4outEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), enabled(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outEnable entity controls whether the IPv4 output
+		stream within the GT01/GN50 rack unit is enabled or not."
+::= { gtIPv4outEntry 5 }
+
+gtIPv4outInterface OBJECT-TYPE
+	SYNTAX Unsigned32 (1..31)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outInterface entity represents the gtInterfaceNumber
+		of the network interface within the GT01/GN50 rack unit out of
+		which this IPv4 output stream is flowing."
+::= { gtIPv4outEntry 6 }
+
+gtIPv4outAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outAddress entity represents the destination IP
+		address of an IPv4 output stream within the GT01/GN50 rack
+		unit."
+::= { gtIPv4outEntry 7 }
+
+gtIPv4outPort OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outPort entity represents the destination IP port of
+		an IPv4 output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 8 }
+
+gtIPv4outProtocol OBJECT-TYPE
+	SYNTAX INTEGER { udp(1), rtp(2), rtpFec(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outProtocol entity represents the IP protocol of an
+		IPv4 output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 9 }
+
+gtIPv4outFECcolumn OBJECT-TYPE
+	SYNTAX Unsigned32 (0..20)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outFECcolumn entity represents the FEC column
+		configuration, also known as the FEC L parameter, of an IPv4
+		output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 10 }
+
+gtIPv4outFECrow OBJECT-TYPE
+	SYNTAX Unsigned32 (0..20)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outFECrow entity represents the FEC row
+		configuration, also known as the FEC D parameter, of an IPv4
+		output stream within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 11 }
+
+gtIPv4outFECMode OBJECT-TYPE
+	SYNTAX INTEGER { column(1), columnRow(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outFECMode entity represents the FEC mode to use on
+		an IPv4 output stream within the GT01/GN50 rack unit. This only
+		has effect if the output protocol is set to RTP+FEC (only
+		available in Streaming operational mode) and can be either
+		column or column + row."
+::= { gtIPv4outEntry 12 }
+
+gtIPv4outTTL OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	UNITS "hops"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outTTL entity represents the TTL (time to live)
+		value to use in IP packets sent on the IPv4 output stream
+		within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 13 }
+
+gtIPv4outTOS OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4outTOS entity represents the TOS (type of service)
+		value to use in IP packets sent on the IPv4 output stream
+		within the GT01/GN50 rack unit."
+::= { gtIPv4outEntry 14 }
+
+--------------------------------------------------------------------------------
+
+gtIPv4inAltConfigTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtIPv4inAltConfigEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfigsTable contains a list of all IPv4
+		alternative input configurations for IPv4 input streams within
+		the GT01/GN50 rack unit."
+::= { gtIPv4Objects 8 }
+
+gtIPv4inAltConfigEntry OBJECT-TYPE
+	SYNTAX GtIPv4inAltConfigEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfigEntry table entry represents an
+		alternative configuration of an IPv4 input stream."
+	INDEX {
+		gtModule,
+		gtChannel,
+		gtIPv4inAltConfigIdx
+	}
+::= { gtIPv4inAltConfigTable 1 }
+
+GtIPv4inAltConfigEntry ::= SEQUENCE {
+	gtIPv4inAltConfigIdx Unsigned32,
+	gtIPv4inAltConfigInterface Unsigned32,
+	gtIPv4inAltConfigAddress IpAddress,
+	gtIPv4inAltConfigPort Unsigned32,
+	gtIPv4inAltConfigSourceAddress IpAddress,
+	gtIPv4inAltConfigRowStatus RowStatus
+}
+
+gtIPv4inAltConfigIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..256)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfigIdx entity represents the index
+		of an alternative configuration of an IPv4 input stream."
+::= { gtIPv4inAltConfigEntry 1 }
+
+gtIPv4inAltConfigInterface OBJECT-TYPE
+	SYNTAX Unsigned32 (1..31)
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfigInterface entity represents the
+		gtInterfaceNumber of the network interface of an alternative
+		config of an IPv4 input stream."
+::= { gtIPv4inAltConfigEntry 13 }
+
+gtIPv4inAltConfigAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfig entity represents the IP address
+		of an alternative config of an IPv4 input stream."
+::= { gtIPv4inAltConfigEntry 14 }
+
+gtIPv4inAltConfigPort OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfig entity represents the IP port
+		of an alternative config of an IPv4 input stream."
+::= { gtIPv4inAltConfigEntry 15 }
+
+gtIPv4inAltConfigSourceAddress OBJECT-TYPE
+	SYNTAX IpAddress
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtIPv4inAltConfig entity represents the source IP address
+		of an alternative config of an IPv4 input stream."
+::= { gtIPv4inAltConfigEntry 16 }
+
+gtIPv4inAltConfigRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The status of this virtual network interface table conceptual
+		row.
+
+		Only the following actions and values are supported:
+		 * active(1)
+		 * createAndGo(4)
+		 * destroy(6)
+
+		If a row exists, it will always be in the active(1) state, even
+		if the interface is not set up in a way that allows it to
+		communicate over the network. In order for the new interface to
+		work, the gtInterfaceIfIndex must be set to an existing,
+		physical interface - not the ifIndex of a VLAN.
+		
+		In order to create a new row, at least one other columnar value
+		than the row status must be set in the same PDU."
+::= { gtIPv4inAltConfigEntry 17 }
+
+--============================================================================--
+
+gtIPv4MIBCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+		"The compliance statement for GTIPv4 entities which implement
+		the GTIPv4 MIB."
+	MODULE
+	MANDATORY-GROUPS {
+		gtGeneralIPv4Group,
+		gtGeneralIPv4NotificationsGroup
+	}
+::= { gtIPv4Compliances 1 }
+
+--------------------------------------------------------------------------------
+
+gtGeneralIPv4Group OBJECT-GROUP
+	OBJECTS {
+		gtIPv4inRowStatus,
+		gtIPv4inBitRate,
+		gtIPv4inPLRpre,
+		gtIPv4inPLRpost,
+		gtIPv4inInterface,
+		gtIPv4inAddress,
+		gtIPv4inPort,
+		gtIPv4inProtocol,
+		gtIPv4inFECcolumn,
+		gtIPv4inFECrow,
+		gtIPv4inRedundancyMode,
+		gtIPv4inActiveConfig,
+		gtIPv4inPLpre,
+		gtIPv4inPLpost,
+		gtIPv4inBitRateMode,
+		gtIPv4inSourceAddress,
+		gtIPv4inLingerTime,
+		gtIPv4inLatency,
+		gtIPv4inStatus,
+		gtIPv4inPLpreReset,
+		gtIPv4inPLpostReset,
+		gtIPv4inManualBitRate,
+		gtIPv4inFECMode,
+		gtIPv4outRowStatus,
+		gtIPv4outBitRate,
+		gtIPv4outPacketsPerDatagram,
+		gtIPv4outBitRateMode,
+		gtIPv4outEnable,
+		gtIPv4outInterface,
+		gtIPv4outAddress,
+		gtIPv4outPort,
+		gtIPv4outProtocol,
+		gtIPv4outFECMode,
+		gtIPv4outFECcolumn,
+		gtIPv4outFECrow,
+		gtIPv4outTTL,
+		gtIPv4outTOS,
+		gtIPv4inAltConfigInterface,
+		gtIPv4inAltConfigAddress,
+		gtIPv4inAltConfigPort,
+		gtIPv4inAltConfigSourceAddress,
+		gtIPv4inAltConfigRowStatus
+	}
+	STATUS current
+	DESCRIPTION
+		"The gtGeneralIPv4Group group is mandatory."
+::= { gtIPv4Groups 1 }
+
+--------------------------------------------------------------------------------
+
+gtGeneralIPv4NotificationsGroup NOTIFICATION-GROUP
+	NOTIFICATIONS {
+		gtIPv4NotifyBitrateDrop,
+		gtIPv4NotifyActiveConfigChanged,
+		gtIPv4NotifyPLRpreChanged,
+		gtIPv4NotifyPLRpostChanged
+	}
+	STATUS current
+	DESCRIPTION
+		"The gtGeneralIPv4NotificationsGroup group defines GTIPv4
+		notification objects which are mandatory."
+::= { gtIPv4Groups 2 }
+
+--============================================================================--
+END
+

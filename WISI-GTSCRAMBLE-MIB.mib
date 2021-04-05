@@ -1,0 +1,783 @@
+WISI-GTSCRAMBLE-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	Unsigned32, Integer32
+		FROM SNMPv2-SMI
+
+	FloatingPoint, gtProcessing
+		FROM WISI-TANGRAM-MIB
+
+	RowStatus, DisplayString
+		FROM SNMPv2-TC
+
+	gtModule
+		FROM WISI-GTMODULES-MIB;
+
+--------------------------------------------------------------------------------
+
+gtScrambleMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the content scramblers in a system
+		(rack unit) of a WISI next-generation headend. It provides
+		configuration and measurement information for these
+		interfaces."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Updated contact information and module description."
+	REVISION "201310011600Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtProcessing 1 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleNotifications OBJECT IDENTIFIER ::= { gtScrambleMIB 0 }
+gtScrambleObjects OBJECT IDENTIFIER ::= { gtScrambleMIB 1 }
+gtScrambleConformance OBJECT IDENTIFIER ::= { gtScrambleMIB 2 }
+gtScrambleCompliances OBJECT IDENTIFIER ::= { gtScrambleConformance 1 }
+gtScrambleGroups OBJECT IDENTIFIER ::= { gtScrambleConformance 2 }
+
+--============================================================================--
+
+gtScrambleNotifyEMMGOpenedChanged NOTIFICATION-TYPE
+	OBJECTS { gtScrambleEMMGOpened }
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleNotifyEMMGOpenedChanged notification indicates that
+		the EMMG client connection status has changed."
+::= { gtScrambleNotifications 1 }
+
+gtScrambleNotifyECMGOpenedChanged NOTIFICATION-TYPE
+	OBJECTS { gtScrambleECMGOpened }
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleNotifyECMGOpenedChanged notification indicates that
+		the ECMG server connection status has changed."
+::= { gtScrambleNotifications 2 }
+
+--============================================================================--
+
+gtScrambleEMMGConnections OBJECT-TYPE
+	SYNTAX Unsigned32 (0..4095)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGConnections entity represents the number of
+		configured EMMG connections within the GT01/GN50 rack unit.
+		The related entries are provided by gtScrambleEMMGTable."
+::= { gtScrambleObjects 1 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleEMMGTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtScrambleEMMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGTable table contains a list of all
+		configured EMMG connections within the GT01/GN50 rack unit.
+		The number of entries is provided by gtScrambleEMMGConnections."
+::= { gtScrambleObjects 2 }
+
+gtScrambleEMMGEntry OBJECT-TYPE
+	SYNTAX GtScrambleEMMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGEntry table entry represents an
+		EMMG connection within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtScrambleEMMGTableIdx
+	}
+::= { gtScrambleEMMGTable 1 }
+
+GtScrambleEMMGEntry ::= SEQUENCE {
+	gtScrambleEMMGTableIdx   Unsigned32,
+	gtScrambleEMMGAlias      DisplayString,
+	gtScrambleEMMGClientID   Unsigned32,
+	gtScrambleEMMGIfIndex    Unsigned32,
+	gtScrambleEMMGPort       Unsigned32,
+	gtScrambleEMMGPrivData   OCTET STRING,
+	gtScrambleEMMGBW         Unsigned32,
+	gtScrambleEMMGOpened     INTEGER,
+	gtScrambleEMMGError      INTEGER,
+	gtScrambleEMMGProtError  Unsigned32,
+	gtScrambleEMMGRcvCount   Unsigned32,
+	gtScrambleEMMGPktType    INTEGER
+}
+
+gtScrambleEMMGTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGTableIdx entity represents the numeric index
+		of a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 1 }
+
+gtScrambleEMMGAlias OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (0..32))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGAlias entity represents the descriptive name
+		of a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 2 }
+
+gtScrambleEMMGClientID OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGClientID entity represents the ClientID parameter
+		of a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 3 }
+
+gtScrambleEMMGIfIndex OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGIfIndex entity represents the network interface index
+		to use on a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 4 }
+
+gtScrambleEMMGPort OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGPort entity represents the TCP port to listen on
+		for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 5 }
+
+gtScrambleEMMGPrivData OBJECT-TYPE
+	SYNTAX OCTET STRING
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGPrivData entity represents the private data to include
+		in the CAT for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 6 }
+
+gtScrambleEMMGBW OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+        UNITS "kbit/s"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGBW entity represents the maximal allowed bitrate
+		for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 7 }
+
+gtScrambleEMMGOpened OBJECT-TYPE
+	SYNTAX INTEGER { closed(1), clientConnected(2), revalidating(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGOpened entity represents the current connection status
+		for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 10 }
+
+gtScrambleEMMGError OBJECT-TYPE
+	SYNTAX INTEGER { noError(1), caIdError(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGError entity represents the current error state
+		for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 11 }
+
+gtScrambleEMMGProtError OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGProtError entity represents the last protocol error
+		returned by a client for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 12 }
+
+gtScrambleEMMGRcvCount OBJECT-TYPE
+	SYNTAX Unsigned32
+        UNITS "bytes"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGRcvCount entity represents the total amount of received
+		EMM data for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 13 }
+
+gtScrambleEMMGPktType OBJECT-TYPE
+	SYNTAX INTEGER { sections(1), tsPackets(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleEMMGPktType entity represents the current EMM packet type
+		for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleEMMGEntry 14 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleECMGConnections OBJECT-TYPE
+	SYNTAX Unsigned32 (0..4095)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGConnections entity represents the number of
+		configured ECMG connections within the GT01/GN50 rack unit.
+		The related entries are provided by gtScrambleECMGTable."
+::= { gtScrambleObjects 3 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleECMGTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtScrambleECMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGTable table contains a list of all
+		configured ECMG connections within the GT01/GN50 rack unit.
+		The number of entries is provided by gtScrambleECMGConnections."
+::= { gtScrambleObjects 4 }
+
+gtScrambleECMGEntry OBJECT-TYPE
+	SYNTAX GtScrambleECMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGEntry table entry represents an
+		ECMG connection within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtScrambleECMGTableIdx
+	}
+::= { gtScrambleECMGTable 1 }
+
+GtScrambleECMGEntry ::= SEQUENCE {
+	gtScrambleECMGTableIdx        Unsigned32,
+	gtScrambleECMGAlias           DisplayString,
+	gtScrambleECMGSuperCAS        Unsigned32,
+	gtScrambleECMGIfIndex         Unsigned32,
+	gtScrambleECMGHostname        DisplayString,
+	gtScrambleECMGPort            Unsigned32,
+	gtScrambleECMGOpened          INTEGER,
+	gtScrambleECMGError           INTEGER,
+	gtScrambleECMGPktCount        Unsigned32,
+	gtScrambleECMGPktType         INTEGER,
+	gtScrambleECMGACDelayStart    Integer32,
+	gtScrambleECMGACDelayStop     Integer32,
+	gtScrambleECMGDelayStart      Integer32,
+	gtScrambleECMGDelayStop       Integer32,
+	gtScrambleECMGTransDelayStart Integer32,
+	gtScrambleECMGTransDelayStop  Integer32,
+	gtScrambleECMGECMRepPeriod    Unsigned32,
+	gtScrambleECMGMaxStreams      Unsigned32,
+	gtScrambleECMGMinCPDuration   Unsigned32,
+	gtScrambleECMGLeadCW          Unsigned32,
+	gtScrambleECMGCWPerMsg        Unsigned32,
+	gtScrambleECMGMaxCompTime     Unsigned32
+}
+
+gtScrambleECMGTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGTableIdx entity represents the numeric index
+		of a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 1 }
+
+gtScrambleECMGAlias OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (0..32))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGAlias entity represents the descriptive name
+		of a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 2 }
+
+gtScrambleECMGSuperCAS OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGSuperCAS entity represents the SuperCAS parameter
+		of a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 3 }
+
+gtScrambleECMGIfIndex OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGIfIndex entity represents the network interface index
+		to use on a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 4 }
+
+gtScrambleECMGHostname OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (0..128))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGHostname entity represents the hostname of the ECMG
+		configured in a ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 5 }
+
+gtScrambleECMGPort OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGPort entity represents the TCP port to listen on
+		for a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 6 }
+
+gtScrambleECMGOpened OBJECT-TYPE
+	SYNTAX INTEGER { closed(1), opened(2), connecting(3), revalidating(4) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGOpened entity represents the current connection status
+		for a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 10 }
+
+gtScrambleECMGError OBJECT-TYPE
+	SYNTAX INTEGER { noError(1), interfaceError(2), resolvError(3), socketError(4) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGError entity represents the current error state
+		for a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 11 }
+
+gtScrambleECMGPktCount OBJECT-TYPE
+	SYNTAX Unsigned32
+        UNITS "packets"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGPktCount entity represents the total number of packets
+		received from the ECMG for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 12 }
+
+gtScrambleECMGPktType OBJECT-TYPE
+	SYNTAX INTEGER { sections(1), tsPackets(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGPktType entity represents the current ECM packet type
+		for a configured ECMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 13 }
+
+gtScrambleECMGACDelayStart OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGACDelayStart entity represents the ac_delay_start parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 14 }
+
+gtScrambleECMGACDelayStop OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGACDelayStop entity represents the ac_delay_stop parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 15 }
+
+gtScrambleECMGDelayStart OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGDelayStart entity represents the delay_start parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 16 }
+
+gtScrambleECMGDelayStop OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGDelayStop entity represents the delay_stop parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 17 }
+
+gtScrambleECMGTransDelayStart OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGTransDelayStart entity represents the transition_delay_start parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 18 }
+
+gtScrambleECMGTransDelayStop OBJECT-TYPE
+	SYNTAX Integer32 (-32768..32767)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGTransDelayStop entity represents the trans_delay_stop parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 19 }
+
+gtScrambleECMGECMRepPeriod OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGECMRepPeriod entity represents the ECM_rep_period parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 20 }
+
+gtScrambleECMGMaxStreams OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGMaxStreams entity represents the max_streams parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 21 }
+
+gtScrambleECMGMinCPDuration OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+        UNITS "100 ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGMinCPDuration entity represents the min_CP_duration parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 22 }
+
+gtScrambleECMGLeadCW OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGLeadCW entity represents the lead_CW parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 23 }
+
+gtScrambleECMGCWPerMsg OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGCWPerMsg entity represents the CW_per_msg parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 24 }
+
+gtScrambleECMGMaxCompTime OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+        UNITS "ms"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleECMGMaxCompTime entity represents the max_comp_time parameter
+		setup in an ECMG connetion for a configured EMMG connection on a GT01/GN50 rack unit."
+::= { gtScrambleECMGEntry 25 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleSCGEntries OBJECT-TYPE
+	SYNTAX Unsigned32 (0..4095)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGEntries entity represents the number of
+		configured Scrambling Control Groups within the GT01/GN50 rack unit.
+		The related entries are provided by gtScrambleSCGTable."
+::= { gtScrambleObjects 5 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleSCGTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtScrambleSCGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGTable table contains a list of all
+		configured Scrambling Control Groups within the GT01/GN50 rack unit.
+		The number of entries is provided by gtScrambleSCGEntries."
+::= { gtScrambleObjects 6 }
+
+gtScrambleSCGEntry OBJECT-TYPE
+	SYNTAX GtScrambleSCGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGEntry table entry represents an
+		Scrambling Control Group within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtScrambleSCGTableIdx
+	}
+::= { gtScrambleSCGTable 1 }
+
+GtScrambleSCGEntry ::= SEQUENCE {
+	gtScrambleSCGTableIdx          Unsigned32,
+	gtScrambleSCGAlias             DisplayString,
+	gtScrambleSCGNomCPDur          Unsigned32,
+	gtScrambleSCGPolicy            INTEGER,
+	gtScrambleSCGPolicyFallback    INTEGER,
+	gtScrambleSCGRemuxCount        Unsigned32,
+	gtScrambleSCGScrambling        INTEGER,
+	gtScrambleSCGCP                Unsigned32
+}
+
+gtScrambleSCGTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGTableIdx entity represents the numeric index
+		of a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 1 }
+
+gtScrambleSCGAlias OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (0..32))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGAlias entity represents the descriptive name
+		of a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 2 }
+
+gtScrambleSCGNomCPDur OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+        UNITS "ms"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGNomCPDur entity represents the nominal crypto period to use
+		for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 3 }
+
+gtScrambleSCGPolicy OBJECT-TYPE
+	SYNTAX INTEGER { never(1), allEcmgConnected(2), anyEcmgConnected(3), always(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGPolicy entity represents the scrambling policy 'when to scramble'
+		for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 4 }
+
+gtScrambleSCGPolicyFallback OBJECT-TYPE
+	SYNTAX INTEGER { toClear(1), repeatLastCw(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGPolicyFallback entity represents the fallback when gtScrambleSCGPolicy
+		is not fullfilled for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 5 }
+
+gtScrambleSCGRemuxCount OBJECT-TYPE
+	SYNTAX Unsigned32 (0..4095)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGRemuxCount entity represents the number of remuxed outputs
+		connected to a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 10 }
+
+gtScrambleSCGScrambling OBJECT-TYPE
+	SYNTAX INTEGER { fta(1), usingLastCW(2), scrambling(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGScrambling entity represents the current
+		scrambling status on a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 11 }
+
+gtScrambleSCGCP OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGCP entity represents the current crypto period
+		on a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGEntry 12 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleSCGECMGEntries OBJECT-TYPE
+	SYNTAX Unsigned32 (0..4095)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGEntries entity represents the number of
+		configured SCG <-> ECMG connections within the GT01/GN50 rack unit.
+		The related entries are provided by gtScrambleSCGECMGTable."
+::= { gtScrambleObjects 7 }
+
+--------------------------------------------------------------------------------
+
+gtScrambleSCGECMGTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtScrambleSCGECMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGTable table contains a list of all
+		configured SCG <-> ECMG connections within the GT01/GN50 rack unit.
+		The number of entries is provided by gtScrambleSCGECMGEntries."
+::= { gtScrambleObjects 8 }
+
+gtScrambleSCGECMGEntry OBJECT-TYPE
+	SYNTAX GtScrambleSCGECMGEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGEntry table entry represents an
+		Scrambling Control Group within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+                gtScrambleSCGTableIdx,
+		gtScrambleSCGECMGTableIdx
+	}
+::= { gtScrambleSCGECMGTable 1 }
+
+GtScrambleSCGECMGEntry ::= SEQUENCE {
+	gtScrambleSCGECMGTableIdx Unsigned32,
+	gtScrambleSCGECMGIdx       OBJECT IDENTIFIER,
+	gtScrambleSCGECMGECMId     Unsigned32,
+	gtScrambleSCGECMGAC        OCTET STRING,
+	gtScrambleSCGECMGPrivData  OCTET STRING,
+	gtScrambleSCGECMGStreamId  Unsigned32,
+	gtScrambleSCGECMGConnected INTEGER,
+	gtScrambleSCGECMGOpened    INTEGER,
+	gtScrambleSCGECMGCWState   INTEGER,
+	gtScrambleSCGECMGError     INTEGER,
+	gtScrambleSCGECMGErrorCode Unsigned32,
+	gtScrambleSCGECMGPktCount  Unsigned32
+}
+
+gtScrambleSCGECMGTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGTableIdx entity represents the numeric index
+		of an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 1 }
+
+gtScrambleSCGECMGIdx OBJECT-TYPE
+	SYNTAX OBJECT IDENTIFIER
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGIdx entity represents the reference to an ECMG
+		entry for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 2 }
+
+gtScrambleSCGECMGECMId OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGECMId entity represents the ECM_id setting to use
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 3 }
+
+gtScrambleSCGECMGAC OBJECT-TYPE
+	SYNTAX OCTET STRING
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGAC entity represents the access criteria setting to use
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 4 }
+
+gtScrambleSCGECMGPrivData OBJECT-TYPE
+	SYNTAX OCTET STRING
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGPrivData entity represents the private data setting to use
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 5 }
+
+gtScrambleSCGECMGStreamId OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGStreamId entity represents the ECM_stream_id setting to use
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 6 }
+
+gtScrambleSCGECMGConnected OBJECT-TYPE
+	SYNTAX INTEGER { ecmgNotValid(1), ecmgConnected(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGConnected entity represents the ECMG relation status
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 10 }
+
+gtScrambleSCGECMGOpened OBJECT-TYPE
+	SYNTAX INTEGER { notOpen(1), settingUp(2), opened(3) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGOpened entity represents the stream opened status
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 11 }
+
+gtScrambleSCGECMGCWState OBJECT-TYPE
+	SYNTAX INTEGER { provisionSent(1), ecmReceived(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGCWState entity represents the stream CW status
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 12 }
+
+gtScrambleSCGECMGError OBJECT-TYPE
+	SYNTAX INTEGER { noError(1), parameterError(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGError entity represents the error status
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 13 }
+
+gtScrambleSCGECMGErrorCode OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGErrorCode entity represents the stream error from ECMG
+		for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 14 }
+
+gtScrambleSCGECMGPktCount OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtScrambleSCGECMGPktCount entity represents the total number of ECM packets
+		received for an ECMG connection for a configured SCG on a GT01/GN50 rack unit."
+::= { gtScrambleSCGECMGEntry 15 }
+
+--============================================================================--
+END

@@ -1,0 +1,913 @@
+-- vi:tabstop=8 shiftwidth=0 textwidth=79
+WISI-GTTS-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, OBJECT-TYPE, Unsigned32, Counter64
+		FROM SNMPv2-SMI
+
+	RowPointer, DisplayString
+		FROM SNMPv2-TC
+
+	gtModule
+		FROM WISI-GTMODULES-MIB
+
+	gtTS, HexUnsigned32
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtTSMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the transport streams flowing into
+		and out of modules within a system (rack unit) of a WISI
+		next-generation headend. It provides general information about
+		the transport streams as well as any programs, services and
+		elementary streams contained within them, as defined by the
+		MPEG and DVB standards."
+
+	REVISION  "201609080000Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtTS 3 }
+
+--------------------------------------------------------------------------------
+
+gtTSNotifications OBJECT IDENTIFIER ::= { gtTSMIB 0 }
+gtTSObjects       OBJECT IDENTIFIER ::= { gtTSMIB 1 }
+gtTSConformance   OBJECT IDENTIFIER ::= { gtTSMIB 2 }
+gtTSCompliances   OBJECT IDENTIFIER ::= { gtTSConformance 1 }
+gtTSGroups        OBJECT IDENTIFIER ::= { gtTSConformance 2 }
+
+--============================================================================--
+
+--
+-- Textual conventions.
+--
+
+--============================================================================--
+
+--
+-- Notifications for streams.
+--
+
+--============================================================================--
+
+--
+-- Objects describing transport streams and their constituent structures.
+--
+
+
+--
+-- Generic transport stream information. Lists the information about a
+-- transport stream that is generic for each TS, regardless if it has MPEG or
+-- DVB metadata, or neither.
+--
+
+gtTSTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtTSEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSTable lists information about all the transport
+		streams currently flowing into, and out of the modules within
+		the GT01/GN50 rack unit."
+::= { gtTSObjects 1 }
+
+gtTSEntry OBJECT-TYPE
+	SYNTAX GtTSEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSEntry represents a transport stream in the gtTSTable.
+		
+		Each TS is identified by the module number for the SFM/MFM
+		module into or out of which the stream is flowing, the
+		direction of flow and an arbitrarily chosen TS index for the
+		stream. The value of the TS index does not correspond to any
+		information parsed from the stream itself."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex
+	}
+::= { gtTSTable 1 }
+
+GtTSEntry ::= SEQUENCE {
+	gtTSDirection   INTEGER,
+	gtTSIndex       Unsigned32,
+	gtTSConnection  RowPointer
+}
+
+gtTSDirection OBJECT-TYPE
+	SYNTAX INTEGER { in(1), out(2) }
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The direction in which this transport stream is flowing on
+		the given SFM/MFM module in the GT01/GN50 rack unit."
+::= { gtTSEntry 1 }
+
+gtTSIndex OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSIndex is an arbitrarily chosen index number for a
+		transport stream. It is unique for a TS flowing into, or out of
+		the given SFM/MFM module in the GT01/GN50 rack unit. This index
+		is not derived from any data parsed from the transport stream."
+::= { gtTSEntry 2 }
+
+gtTSConnection OBJECT-TYPE
+	SYNTAX RowPointer
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSConnection points out a row in either the
+		gtInputsTable or gtOutputsTable. This row represents the
+		input/output that this stream is flowing through."
+::= { gtTSEntry 3 }
+
+
+--
+-- MPEG specific information about transport streams, as specified in the
+-- ISO/IEC 13818-1 standard.
+--
+
+gtMPEGStreamTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtMPEGStreamEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGStreamTable lists the information describing entire
+		MPEG transport streams, as specified in the ISO/IEC 13818-1
+		standard.
+
+		If a transport stream has no PAT embedded in it, that gtTSEntry
+		will not have a corresponding entry in this table.
+
+		E.g., a so called barker channel can constitute a TS containing
+		only event information for programs contained in a separate
+		transport stream, which it will later be multiplexed into. Such
+		a stream will not contain a PAT."
+::= { gtTSObjects 2 }
+
+gtMPEGStreamEntry OBJECT-TYPE
+	SYNTAX GtMPEGStreamEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGStreamEntry represents the MPEG specific information
+		for an entire TS and is identified by the SFM/MFM module number
+		and the TS flow direction and index."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex
+	}
+::= { gtMPEGStreamTable 1 }
+
+GtMPEGStreamEntry ::= SEQUENCE {
+	gtMPEGStreamNumPrograms  Unsigned32,
+	gtMPEGStreamTSID         Unsigned32
+}
+
+gtMPEGStreamNumPrograms OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGStreamNumPrograms entity represents how many MPEG
+		programs exist in a given transport stream, as read from the
+		MPEG PAT of the given TS. There should be the same number of
+		rows corresponding to this transport stream in the
+		gtMPEGProgramTable."
+::= { gtMPEGStreamEntry 1 }
+
+gtMPEGStreamTSID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGStreamTSID entity represents the transport stream
+		ID, as read from the MPEG PAT of the given TS."
+::= { gtMPEGStreamEntry 2 }
+
+--
+-- MPEG PSI specific information for the programs of a transport stream, as
+-- specified in the ISO/IEC 13818-1 standard.
+--
+
+gtMPEGProgramTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtMPEGProgramEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGProgramTable lists information about the MPEG
+		programs available in the MPEG transport streams flowing into,
+		and out of the SFM/MFM modules in the GT01/GN50 rack unit. The
+		program data is based on the metadata specified in the ISO/IEC
+		13818-1 standard."
+::= { gtTSObjects 3 }
+
+gtMPEGProgramEntry OBJECT-TYPE
+	SYNTAX GtMPEGProgramEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGProgramEntry entity represents the information about
+		one program, as defined in MPEG transport streams, that is
+		included in one TS flowing into, or out of an SFM/MFM module in
+		the GT01/GN50 rack unit.
+		
+		It is identified by the module number, the TS flow direction
+		and index on that module and the program number in that TS."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtMPEGProgramNumber
+	}
+::= { gtMPEGProgramTable 1 }
+
+GtMPEGProgramEntry ::= SEQUENCE {
+	gtMPEGProgramNumber  Unsigned32,
+	gtMPEGProgramNumES   Unsigned32
+}
+
+gtMPEGProgramNumber OBJECT-TYPE
+	SYNTAX Unsigned32 (1..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGProgramNumber entity represents the program number
+		as read from the MPEG PMT for this program in the TS.
+
+		0x0000 is not allowed, as a value of 0 in the PAT's program
+		number field means that the referenced PID stream contains NITs
+		describing the broadcasting network, rather than PMTs
+		describing MPEG programs."
+::= { gtMPEGProgramEntry 1 }
+
+gtMPEGProgramNumES OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGProgramNumES represents the number of elementary
+		streams that this program contains, as read from this program's
+		MPEG PMT. There should be the same number of rows for this
+		program in the gtMPEGESTable."
+::= { gtMPEGProgramEntry 2 }
+
+--
+-- MPEG PSI data based on the information about an elementary stream, primarily
+-- based on information in the PMT, as specified in the ISO/IEC 13818-1
+-- standard.
+--
+
+gtMPEGESTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtMPEGESEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGESTable lists the elementary streams that are
+		included in programs in the transport streams flowing into, and
+		out of the SFM/MFM modules in the GT01/GN50 rack unit. The
+		information about each elementary stream is primarily based on
+		the Program Specific Information (PSI) as defined by the
+		ISO/IEC 13818-1 standard."
+::= { gtTSObjects 4 }
+
+gtMPEGESEntry OBJECT-TYPE
+	SYNTAX GtMPEGESEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGESEntry represents the parsed information about one
+		single elementary stream within a program in an MPEG TS flowing
+		into, or out of an SFM/MFM module in the GT01/GN50 rack unit.
+
+		One elementary stream is identified by the SFM/MFM module
+		number, the TS flow direction and index on that module, the
+		program number in that TS and the PID of the elementary
+		stream."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtMPEGProgramNumber,
+		gtPID
+	}
+::= { gtMPEGESTable 1 }
+
+GtMPEGESEntry ::= SEQUENCE {
+	gtMPEGESType           HexUnsigned32,
+	gtMPEGESAudioLanguage  DisplayString
+}
+
+gtMPEGESType OBJECT-TYPE
+	SYNTAX HexUnsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGESType represents the type of this elementary
+		stream, as specified in the stream_type of the MPEG PMT
+		descriptor loop of the MPEG TS standard. The values assigned in
+		ISO/IEC 13818-1 are:
+
+		  Value      Description
+		  -----      -----------
+		  0x00       ITU-T | ISO/IEC Reserved
+		  0x01       ISO/IEC 11172-2 Video
+		  0x02       ITU-T Rec. H.262 | ISO/IEC 13818-2 Video or
+			     ISO/IEC 11172-2 constrained parameter video stream
+		  0x03       ISO/IEC 11172-3 Audio
+		  0x04       ISO/IEC 13818-3 Audio
+		  0x05       ITU-T Rec. H.222.0 | ISO/IEC 13818-1
+			     private_sections
+		  0x06       ITU-T Rec. H.222.0 | ISO/IEC 13818-1 PES packets
+			     containing private data
+		  0x07       ISO/IEC 13522 MHEG
+		  0x08       ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Annex A
+			     DSM-CC
+		  0x09       ITU-T Rec. H.222.1
+		  0x0A       ISO/IEC 13818-6 type A
+		  0x0B       ISO/IEC 13818-6 type B
+		  0x0C       ISO/IEC 13818-6 type C
+		  0x0D       ISO/IEC 13818-6 type D
+		  0x0E       ITU-T Rec. H.222.0 | ISO/IEC 13818-1 auxiliary
+		  0x0F       ISO/IEC 13818-7 Audio with ADTS transport syntax
+		  0x10       ISO/IEC 14496-2 Visual
+		  0x11       ISO/IEC 14496-3 Audio with the LATM trans port
+			     syntax as defined in ISO/IEC 14496-3
+		  0x12       ISO/IEC 14496-1 SL-packetized stream or FlexMux
+			     stream carried in PES packets
+		  0x13       ISO/IEC 14496-1 SL-packetized stream or FlexMux
+			     stream carried in ISO/IEC 14496_sections
+		  0x14       ISO/IEC 13818-6 Synchronized Download Protocol
+		  0x15       Metadata carried in PES packets
+		  0x16       Metadata carried in metadata_sections
+		  0x17       Metadata carried in ISO/IEC 13818-6 Data Carousel
+		  0x18       Metadata carried in ISO/IEC 13818-6 Object
+			     Carousel
+		  0x19       Metadata carried in ISO/IEC 13818-6 Synchronized
+			     Download Protocol
+		  0x1A       IPMP stream (defined in ISO/IEC 13818-11, MPEG-2
+			     IPMP)
+		  0x1B       AVC video stream as defined in IT U-T Rec. H.264 |
+			     ISO/IEC 14496-10 Video
+		  0x1C-0x7E  ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Reserved
+		  0x7F       IPMP stream
+		  0x80-0xFF  User Private"
+::= { gtMPEGESEntry 2 }
+
+gtMPEGESAudioLanguage OBJECT-TYPE
+	SYNTAX DisplayString (SIZE(3))
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtMPEGESAudioLanguage contains the ISO-693-2 (Alpha-3)
+		language code for the primary audio language of this stream.
+
+		The source of this information can be either the language code
+		specified in an ISO-639 language descriptor in the MPEG PMT
+		(descriptor tag 0x0A) for this ES, or private AC3 audio
+		descriptors. If the language descriptor lists multiple
+		languages for the stream, this will be set to the first one."
+::= { gtMPEGESEntry 3 }
+
+
+--
+-- DVB SI specific information for entire transport streams, as specified in
+-- the ETSI EN 300 468 standard.
+--
+
+gtDVBStreamTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDVBStreamEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamTable lists the DVB-SI information that
+		describes entire transport streams, as specified in the SDT and
+		NIT tables of the DVB-SI standard.
+
+		If a transport stream does not contain such tables - e.g., if
+		it is a pure MPEG transport stream - there will be no entry in
+		this table for that TS."
+::= { gtTSObjects 5 }
+
+gtDVBStreamEntry OBJECT-TYPE
+	SYNTAX GtDVBStreamEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamEntry describes the DVB-SI specific information
+		for an entire transport stream.
+
+		One entry is identified by the SFM/MFM module number and the TS
+		flow direction and index for the stream it describes."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex
+	}
+::= { gtDVBStreamTable 1 }
+
+GtDVBStreamEntry ::= SEQUENCE {
+	gtDVBStreamTSID         Unsigned32,
+	gtDVBStreamNID          Unsigned32,
+	gtDVBStreamONID         Unsigned32,
+	gtDVBStreamNetworkName  DisplayString,
+	gtDVBStreamNumServices  Unsigned32
+}
+
+gtDVBStreamTSID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamTSID represents the transport stream ID for
+		this TS, as read from the DVB-SI SDT in this TS. This should
+		match the TSID in the gtMPEGStreamEntry for this transport
+		stream, if the TS contains an MPEG PAT."
+::= { gtDVBStreamEntry 1 }
+
+gtDVBStreamNID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamNID represents the Network ID for this TS, as
+		read from the DVB-SI NIT.
+
+		The syntax of this ID is described in ETSI EN 300 468 and
+		represents a network operator, broadcaster of content producer
+		- within a geographical area - who is broadcasting this TS."
+::= { gtDVBStreamEntry 2 }
+
+gtDVBStreamONID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamONID represents the Original Network ID for
+		this TS, as read from the DVB-SI SDT.
+
+		The syntax of this ID is described in ETSI EN 300 468 and
+		represents a network operator, broadcaster or content producer
+		who is broadcasting this TS."
+::= { gtDVBStreamEntry 3 }
+
+gtDVBStreamNetworkName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamNetworkName represents Network Name for this
+		TS, as read from the DVB-SI NIT. This is the name registered
+		for the network that is broadcasting this stream."
+::= { gtDVBStreamEntry 4 }
+
+gtDVBStreamNumServices OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBStreamNumServices entity represents the number of
+		services in this TS, as read from the DVB-SI SDT. This
+		corresponds to the number of rows in the gtDVBServiceTable for
+		this TS."
+::= { gtDVBStreamEntry 5 }
+
+--
+-- DVB-SI information describing an entire service.
+--
+
+gtDVBServiceTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDVBServiceEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceTable lists the services contained in the
+		transport streams flowing into, and out of the SFM/MFM modules
+		on the GT01/GN50 rack unit, as described by DVB-SI specific
+		service metadata."
+::= { gtTSObjects 6 }
+
+gtDVBServiceEntry OBJECT-TYPE
+	SYNTAX GtDVBServiceEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceEntry represents the information for one
+		service, as specified by the DVB-SI standard in a transport
+		stream.
+
+		A service is identified by the SFM/MFM module number, the
+		transport stream flow direction and index on that module and
+		the service ID as specified in the SDT."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtDVBServiceID
+	}
+::= { gtDVBServiceTable 1 }
+
+GtDVBServiceEntry ::= SEQUENCE {
+	gtDVBServiceID        Unsigned32,
+	gtDVBServiceType      HexUnsigned32,
+	gtDVBServiceProvider  DisplayString,
+	gtDVBServiceName      DisplayString,
+	gtDVBServiceStatus    INTEGER
+}
+
+gtDVBServiceID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceID represents the ID of this service within
+		the TS, as read from the DVB-SI SDT. This should correspond to
+		the program number of a program listed in the MPEG PMT for the
+		containing transport stream."
+::= { gtDVBServiceEntry 1 }
+
+gtDVBServiceType OBJECT-TYPE
+	SYNTAX HexUnsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceType represents the type of this service, as
+		read from the service descriptor in the inner loop of the
+		DVB-SI SDT. The types defined in DVB-SI are:
+
+		  service_type Description
+		  ------------ -----------
+		  0x00         Reserved for future use
+		  0x01         Digital television service (see note 1)
+		  0x02         Digital radio sound service (see note 2)
+		  0x03         Teletext service
+		  0x04         NVOD reference service (see note 1)
+		  0x05         NVOD time-shifted service (see note 1)
+		  0x06         Mosaic service
+		  0x07         FM radio service
+		  0x08         DVB SRM service [49]
+		  0x09         Reserved for future use
+		  0x0A         Advanced codec digital radio sound service
+		  0x0B         Advanced codec mosaic service
+		  0x0C         Data broadcast service
+		  0x0D         Reserved for Common Interface Usage (EN 50221 [37])
+		  0x0E         RCS Map (see EN 301 790 [7])
+		  0x0F         RCS FLS (see EN 301 790 [7])
+		  0x10         DVB MHP service
+		  0x11         MPEG-2 HD digital television service
+		  0x12 - 0x15  Reserved for future use
+		  0x16         Advanced codec SD digital television service
+		  0x17         Advanced codec SD NVOD time-shifted service
+		  0x18         Advanced codec SD NVOD reference service
+		  0x19         Advanced codec HD digital television service
+		  0x1A         Advanced codec HD NVOD time-shifted service
+		  0x1B         Advanced codec HD NVOD reference service
+		  0x1C         Advanced codec frame compatible
+		               plano-stereoscopic HD digital television service
+		               (see note 3)
+		  0x1D         Advanced codec frame compatible
+		               plano-stereoscopic HD NVOD time-shifted service
+		               (see note 3)
+		  0x1E         Advanced codec frame compatible
+		               plano-stereoscopic HD NVOD reference service
+		               (see note 3)
+		  0x1F - 0x7F  Reserved for future use
+		  0x80 - 0xFE  User defined
+		  0xFF         Reserved for future use
+
+		These are listed in table 87, page 73 of ETSI EN 300 468."
+::= { gtDVBServiceEntry 2 }
+
+gtDVBServiceProvider OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceProvider represents the name of the provider
+		of this service, as read from the service descriptor in the
+		inner loop of the SDT of DVB-SI."
+::= { gtDVBServiceEntry 3 }
+
+gtDVBServiceName OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceName represents the name of this service, as
+		read from the service descriptor in the inner loop of the SDT
+		of DVB-SI."
+::= { gtDVBServiceEntry 4 }
+
+gtDVBServiceStatus OBJECT-TYPE
+	SYNTAX INTEGER { unknown(0), notRunning(1), startingSoon(2), pausing(3), running(4), offAir(5) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBServiceStatus represents the current running status
+		of this service, as read from the running_status in the SDT of
+		DVB-SI."
+::= { gtDVBServiceEntry 5 }
+
+
+--
+-- Channel list information as described in various private descriptor tags
+-- used by different operators and broadcasters.
+--
+
+gtLCListTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtLCListEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtLCListTable contains the logical channel lists currently
+		used in the system, each embedded into the transport stream
+		using proprietary values for the Private Data Specifier (PDS)
+		and descriptor tag.
+
+		E.g., in NorDig networks, the list of logical channel numbers
+		are sent using a private tag called a Logical Channel
+		Descriptor (LCD) in the NIT with service ID to LCN mappings to
+		be used in that transport stream using a tag value of 0x83
+		(for version 1 of the LCD) or 0x87 (for v2). In order for the
+		receiver to properly recognize it as a NorDig LCD, it will be
+		preceded by a PDS descriptor with a PDS value of 0x00000029.
+		Other networks use other PDS values with their own private
+		descriptors, possibly structured entirely differently, to
+		encode similar information."
+::= { gtTSObjects 7 }
+
+gtLCListEntry OBJECT-TYPE
+	SYNTAX GtLCListEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtLCListEntry represents a list of LCN numbers for
+		services currently in use by a TS on an SFM/MFM module on the
+		GT01/GN50 rack unit.
+		
+		Each list is identified by the SFM/MFM module number, the TS
+		flow direction and index for the stream in which it occurs and
+		an arbitrarily chosen channel list index."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtLCListIndex
+	}
+::= { gtLCListTable 1 }
+
+GtLCListEntry ::= SEQUENCE {
+	gtLCListIndex        Unsigned32,
+	gtLCListPDS          HexUnsigned32,
+	gtLCListTag          HexUnsigned32
+--	gtLCListName         DisplayString,
+--	gtLCListCountryCode  DisplayString
+}
+
+gtLCListIndex OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtLCListIndex is an arbitrarily chosen index for this
+		channel list."
+::= { gtLCListEntry 1 }
+
+gtLCListPDS OBJECT-TYPE
+	SYNTAX HexUnsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtLCListPDS represents the private data specifier value in
+		the PDS descriptor preceding the private descriptor used to
+		encode the Service ID to LCN mapping in this channel list."
+::= { gtLCListEntry 2 }
+
+gtLCListTag OBJECT-TYPE
+	SYNTAX HexUnsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtLCListTag represents the descriptor tag value for the
+		private descriptor that is used to encode the Service ID to LCN
+		mapping in this channel list."
+::= { gtLCListEntry 3 }
+
+--gtLCListName OBJECT-TYPE
+--	SYNTAX DisplayString
+--	MAX-ACCESS read-only
+--	STATUS current
+--	DESCRIPTION
+--		"The gtLCListName represents a free form description of this
+--		channel list."
+--::= { gtLCListEntry 4 }
+--
+--gtLCListCountryCode OBJECT-TYPE
+--	SYNTAX DisplayString (SIZE(3))
+--	MAX-ACCESS read-only
+--	STATUS current
+--	DESCRIPTION
+--		"The gtLCListCountryCode represents the three letter country
+--		code for the region where this channel list is to be applied."
+--::= { gtLCListEntry 5 }
+
+gtLCNTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtLCNEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtLCNTable lists all the logical channel numbers that
+		services may be assigned using the currently parsed/assigned
+		channel lists in transport streams flowing into and out of the
+		SFM/MFM modules in the GT01/GN50 rack unit."
+::= { gtTSObjects 8 }
+
+gtLCNEntry OBJECT-TYPE
+	SYNTAX GtLCNEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtLCNEntry represents the logical channel number to assign
+		one service using a particular channel list - i.e., encoded
+		using a specific set of private tags.
+		
+		An LCN is identified by the SFM/MFM module number, the TS flow
+		direction and index on that module, the channel list index for
+		the list/encoding to use and the service ID for which you want
+		the LCN."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtLCListIndex,
+		gtDVBServiceID
+	}
+::= { gtLCNTable 1 }
+
+GtLCNEntry ::= SEQUENCE {
+	gtLCN         Unsigned32
+--	gtLCNVisible  TruthValue
+}
+
+gtLCN OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtLCN represents the logical channel number to assign one
+		service in a TS using one specific channel list as described in
+		the gtLCListTable.
+
+		The valid range for the LCN depends on the specific tag formats
+		used by the list. E.g., NorDig used 14 bits for LCDv1 while
+		most others (as well as NorDig's LCDv2) use 10 bits."
+::= { gtLCNEntry 1 }
+
+--gtLCNVisible OBJECT-TYPE
+--	SYNTAX TruthValue
+--	MAX-ACCESS read-only
+--	STATUS current
+--	DESCRIPTION
+--		"The gtLCNVisible represents whether or not this LCN should be
+--		set as visible using the LCM encoding scheme used by the given
+--		channel list. Not all channel lists may support actually
+--		setting a channel's visibility."
+--::= { gtLCNEntry 2 }
+
+gtPIDTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtPIDEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtPIDTable lists the packet identifiers in transport
+		streams flowing into and out of the SFM/MFM modules in the
+		GT01/GN50 rack unit."
+::= { gtTSObjects 9 }
+
+gtPIDEntry OBJECT-TYPE
+	SYNTAX GtPIDEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtPIDEntry represents information about the packets with a
+		specific PID in a transport stream flowing into or out of a
+		SFM/MFM module in the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtPID
+	}
+::= { gtPIDTable 1 }
+
+GtPIDEntry ::= SEQUENCE {
+	gtPID Unsigned32,
+	gtPIDPackets Counter64
+}
+
+gtPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..8191)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtPID entity represents one packet ID in a transport
+		stream, as read from the transport packets in the TS."
+	REFERENCE "ISO/IEC 13818-1 2.4.3"
+::= { gtPIDEntry 1 }
+
+gtPIDPackets OBJECT-TYPE
+	SYNTAX Counter64
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtPIDPackets entity represents the total number of packets
+		with this PID that the SFM/MFM module has received or sent."
+::= { gtPIDEntry 2 }
+
+--============================================================================--
+
+--
+-- Compliance groups for the streams MIB.
+--
+
+gtGeneralStreamGroup OBJECT-GROUP
+	OBJECTS {
+		gtTSConnection,
+		gtPIDPackets
+	}
+	STATUS current
+	DESCRIPTION
+		"The general stream group contains the metadata about a
+		transport streams that is general to all TSes and not specific
+		to either MPEG nor DVB-SI structures."
+::= { gtTSGroups 1 }
+
+gtMPEGStreamGroup OBJECT-GROUP
+	OBJECTS {
+		gtMPEGStreamNumPrograms,
+		gtMPEGStreamTSID,
+		gtMPEGProgramNumES,
+		gtMPEGESType,
+		gtMPEGESAudioLanguage
+	}
+	STATUS current
+	DESCRIPTION
+		"The MPEG stream group contains the metadata parsed from MPEG
+		TS specific structures in transport streams."
+::= { gtTSGroups 2 }
+
+gtDVBStreamGroup OBJECT-GROUP
+	OBJECTS {
+		gtDVBStreamTSID,
+		gtDVBStreamNID,
+		gtDVBStreamONID,
+		gtDVBStreamNetworkName,
+		gtDVBStreamNumServices,
+		gtDVBServiceType,
+		gtDVBServiceProvider,
+		gtDVBServiceName,
+		gtDVBServiceStatus,
+		gtLCListPDS,
+		gtLCListTag,
+--		gtLCListName,
+--		gtLCListCountryCode,
+		gtLCN
+--		gtLCNVisible
+	}
+	STATUS current
+	DESCRIPTION
+		"The DVB-SI stream group contains the metadata parsed from
+		DVB-SI specific structures in transport streams."
+::= { gtTSGroups 3 }
+
+gtTSBasicCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+		"The compliance statement for Wisi agents that implement
+		parsing metadata about transport streams in GT01/GN50 rack
+		units and/or SFM/MFM modules."
+	MODULE -- This module.
+		MANDATORY-GROUPS {
+			gtGeneralStreamGroup,
+			gtMPEGStreamGroup,
+			gtDVBStreamGroup
+		}
+::= { gtTSCompliances 1 }
+
+END

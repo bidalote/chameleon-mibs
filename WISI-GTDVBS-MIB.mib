@@ -1,0 +1,266 @@
+
+WISI-GTDVBS-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	IpAddress, Unsigned32
+		FROM SNMPv2-SMI
+
+	FloatingPoint
+		FROM WISI-TANGRAM-MIB
+
+	RowStatus
+		FROM SNMPv2-TC
+
+	gtModule, gtChannel
+		FROM WISI-GTMODULES-MIB
+
+	gtDVB
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtDVBSMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the DVB-S streaming interfaces in a
+		system (rack unit) of a WISI next-generation headend. It
+		provides configuration and measurement information for these
+		interfaces."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Removed in channels and in enable objects. Updated contact
+		information and module description."
+	REVISION "201212121320Z"
+	DESCRIPTION
+		"Updated contact details."
+	REVISION "201210311200Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtDVB 3 }
+
+--------------------------------------------------------------------------------
+
+gtDVBSNotifications OBJECT IDENTIFIER ::= { gtDVBSMIB 0 }
+gtDVBSObjects OBJECT IDENTIFIER ::= { gtDVBSMIB 1 }
+gtDVBSConformance OBJECT IDENTIFIER ::= { gtDVBSMIB 2 }
+gtDVBSCompliances OBJECT IDENTIFIER ::= { gtDVBSConformance 1 }
+gtDVBSGroups OBJECT IDENTIFIER ::= { gtDVBSConformance 2 }
+
+--============================================================================--
+
+gtDVBSNotifyLockedChanged NOTIFICATION-TYPE
+	OBJECTS { gtDVBSinLocked }
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSNotifyLockedChanged notification indicates that
+		the tuner locked status has changed."
+::= { gtDVBSNotifications 1 }
+
+--============================================================================--
+
+gtDVBSinTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtDVBSinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinTable table contains a list of all
+		DVB-S input streams within the GT01/GN50 rack unit."
+::= { gtDVBSObjects 2 }
+
+gtDVBSinEntry OBJECT-TYPE
+	SYNTAX GtDVBSinEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinEntry table entry represents an
+		DVB-S input stream within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtDVBSinTable 1 }
+
+GtDVBSinEntry ::= SEQUENCE {
+	gtDVBSinRowStatus RowStatus,
+	gtDVBSinConnector Unsigned32,
+	gtDVBSinLocked INTEGER,
+	gtDVBSinLevel FloatingPoint,
+	gtDVBSinSNR FloatingPoint,
+	gtDVBSinBER FloatingPoint,
+	gtDVBSinFrequency Unsigned32,
+	gtDVBSinPolarisation INTEGER,
+	gtDVBSinSymbolRate Unsigned32,
+	gtDVBSinCodeRate INTEGER,
+	gtDVBSinLNBType INTEGER,
+	gtDVBSinLOFrequency Unsigned32,
+	gtDVBSinLNBVoltage INTEGER,
+	gtDVBSin22kHzTone INTEGER,
+	gtDVBSinDiSEqCType INTEGER,
+	gtDVBSinDiSEqCSource Unsigned32
+}
+
+gtDVBSinRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinRowStatus entity represents the row/entry status
+		of an DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 1 }
+
+gtDVBSinConnector OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4)
+	UNITS "Connector"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinConnector entity represents the ID of the physical
+		connector used for a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 2 }
+
+gtDVBSinLocked OBJECT-TYPE
+	SYNTAX INTEGER { unlocked(1), locked(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinLocked entity represent the locked status
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 3 }
+
+gtDVBSinLevel OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dBm"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinLevel entity represent the current RF level
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 4 }
+
+gtDVBSinSNR OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dB"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinSNR entity represent the Signal to Noise Ratio
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 5 }
+
+gtDVBSinBER OBJECT-TYPE
+	SYNTAX FloatingPoint
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinSNR entity represent the Signal to Noise Ratio
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 7 }
+
+gtDVBSinFrequency OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "kHz"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinFrequency entity represent the frequency setting
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 11 }
+
+gtDVBSinPolarisation OBJECT-TYPE
+	SYNTAX INTEGER { horizontal(1), vertical(2), circular-left(3), circular-right(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinPolarisation entity represent the signal polarisation
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 12 }
+
+gtDVBSinSymbolRate OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "Bd"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinSymbolRate entity represent the symbolrate (in baud)
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 13 }
+
+gtDVBSinCodeRate OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), c1x2(500), c2x3(666), c3x4(750), c5x6(833), c7x8(875) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinCodeRate entity represent the coding rate
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 15 }
+
+gtDVBSinLNBType OBJECT-TYPE
+	SYNTAX INTEGER { none(1), universal(2), fixed(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinLNBType entity represent the LNB voltage setting
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 20 }
+
+gtDVBSinLOFrequency OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "kHz"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinLOFrequency entity represent the LO frequency
+		of a DVB-S input stream within the GT01/GN50 rack unit.
+		This parameter is only used if LNB is set to fixed."
+::= { gtDVBSinEntry 21 }
+
+gtDVBSinLNBVoltage OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), off(2), lnb13V(13), lnb18V(18) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinLNBVoltage entity represent the LNB voltage setting
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 22 }
+
+gtDVBSin22kHzTone OBJECT-TYPE
+	SYNTAX INTEGER { auto(1), off(2), on(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSin22kHzTone entity represent the LNB 22 kHz tone setting
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 23 }
+
+gtDVBSinDiSEqCType OBJECT-TYPE
+	SYNTAX INTEGER { none(1), diseqc4way(4) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinDiSEqCType entity represent the DiSEqC type setting
+		of a DVB-S input stream within the GT01/GN50 rack unit."
+::= { gtDVBSinEntry 24 }
+
+gtDVBSinDiSEqCSource OBJECT-TYPE
+	SYNTAX Unsigned32
+	UNITS "source"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtDVBSinDiSEqCSource entity represent the DiSEqC source id
+		of a DVB-S input stream within the GT01/GN50 rack unit.
+		This parameter is only used if gtDVBSinDiSEqCTypeis
+		set to other than none."
+::= { gtDVBSinEntry 25 }
+
+--============================================================================--
+END

@@ -1,0 +1,287 @@
+-- vi:tabstop=8 shiftwidth=0 textwidth=79
+WISI-GTTSMONITORING-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE, Unsigned32
+		FROM SNMPv2-SMI
+
+	TEXTUAL-CONVENTION, DateAndTime, DisplayString
+		FROM SNMPv2-TC
+
+	gtModule
+		FROM WISI-GTMODULES-MIB
+
+	gtTSDirection, gtTSIndex
+		FROM WISI-GTTS-MIB
+
+	gtTS
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtTSMonitoringMIB MODULE-IDENTITY
+	LAST-UPDATED "201705110900Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents monitoring data and notifications
+		for the transport streams flowing into modules within a system
+		(rack unit) of a WISI next-generation headend. It provides
+		information about health status and encountered errors in the
+		streams."
+
+	REVISION  "201705110900Z"
+	DESCRIPTION
+		"Added more TSErrorType."
+	REVISION  "201609210000Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtTS 4 }
+
+--------------------------------------------------------------------------------
+
+gtTSMonitoringNotifications OBJECT IDENTIFIER ::= { gtTSMonitoringMIB 0 }
+gtTSMonitoringObjects       OBJECT IDENTIFIER ::= { gtTSMonitoringMIB 1 }
+gtTSMonitoringConformance   OBJECT IDENTIFIER ::= { gtTSMonitoringMIB 2 }
+gtTSMonitoringCompliances   OBJECT IDENTIFIER ::= { gtTSMonitoringConformance 1 }
+gtTSMonitoringGroups        OBJECT IDENTIFIER ::= { gtTSMonitoringConformance 2 }
+
+--============================================================================--
+
+--
+-- Textual conventions.
+--
+
+TSErrorType ::= TEXTUAL-CONVENTION
+	STATUS current
+	DESCRIPTION
+		"This type enumerates the different error types of errors that
+		the agent can inform the management software about."
+	SYNTAX INTEGER {
+		etr290TsSyncLoss(0),
+		etr290SyncByteError(1),
+		etr290PatError2Timeout(2),
+		etr290PatError2TableId(3),
+		etr290PatError2Scrambling(4),
+		etr290ContinuityCountError(5),
+		etr290PmtError2Timeout(6),
+		etr290PmtError2Scrambling(7),
+		etr290TransportError(9),
+		etr290CrcErrorPat(10),
+		etr290CrcErrorCat(11),
+		etr290CrcErrorPmt(12),
+		etr290CrcErrorTsdt(13),
+		systemTunerUnlocked(186)
+	}
+
+A78ErrorSeverity ::= TEXTUAL-CONVENTION
+	STATUS current
+	DESCRIPTION
+		"This type represents the category/categories that an error
+		falls under, as defined in ATSC recommended practice A/78."
+	REFERENCE "ATSC A/78  4.1"
+	SYNTAX BITS {
+		transportOffAir(0),
+		programOffAir(1),
+		componentMissing(2),
+		qualityOfService(3),
+		technicallyNonConformant(4)
+	}
+
+--============================================================================--
+
+--
+-- Notifications for streams.
+--
+
+gtTSError NOTIFICATION-TYPE
+	OBJECTS { gtTSErrorType, gtTSErrorSince }
+	STATUS current
+	DESCRIPTION
+		"The gtTSError notification indicates that a new error state
+		was discovered. Depending on the error type, the notification
+		may also contain other object references that are relevant for
+		the specific errors:
+
+		etr290ContinuityCountError
+		  gtPID - The PID for which a continuity error exists.
+		etr290PmtError2Scrambling
+		  gtPID - The PID for which a PMT error exists.
+		etr290CrcErrorPmt
+		  gtPID - The PID for which a PMT error exists."
+::= { gtTSMonitoringNotifications 1 }
+
+gtTSErrorClear NOTIFICATION-TYPE
+	OBJECTS { gtTSErrorType, gtTSErrorSince }
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorClear notification indicates that a previously
+		ongoing error state has been cleared. It will contain the same
+		objects as the corresponding gtTSError notification for the
+		same gtTSErrorType."
+::= { gtTSMonitoringNotifications 2 }
+
+--============================================================================--
+
+--
+-- Objects describing transport streams and their constituent structures.
+--
+
+--
+-- Transport stream errors.
+--
+
+gtTSErrorTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtTSErrorEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorTable holds information about the current error
+		states in a transport stream, i.e. error conditions that have
+		not yet been resolved. Any connections to other MIB structures
+		that may be related to an error entry is not stored in this
+		table but only conveyed through the notification about the
+		error. If the management software needs to keep track of such
+		connections it will have to keep track of it itself.
+
+		There may be multiple entries in this table that are identical
+		save for the index value. E.g., if multiple continuity count
+		errors starting at the same timestamp for different PIDs in the
+		same TS, each PID will have its own error entry in this table."
+::= { gtTSMonitoringObjects 1 }
+
+gtTSErrorEntry OBJECT-TYPE
+	SYNTAX GtTSErrorEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorEntry represents one ongoing error in a transport
+		stream. When an error state is resolved, its corresponding
+		entry in this table is removed by the agent."
+	INDEX {
+		gtModule,
+		gtTSDirection,
+		gtTSIndex,
+		gtTSErrorIndex
+	}
+::= { gtTSErrorTable 1 }
+
+GtTSErrorEntry ::= SEQUENCE {
+	gtTSErrorIndex Unsigned32,
+	gtTSErrorType TSErrorType,
+	gtTSErrorSince DateAndTime,
+	gtTSErrorDescription DisplayString,
+	gtTSErrorPriority DisplayString,
+	gtTSErrorSeverity A78ErrorSeverity
+}
+
+gtTSErrorIndex OBJECT-TYPE
+	SYNTAX Unsigned32 (1..4294967295)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorIndex is an arbitrarily chosen index number for
+		this ongoing error within a transport stream."
+::= { gtTSErrorEntry 1 }
+
+
+gtTSErrorType OBJECT-TYPE
+	SYNTAX TSErrorType
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorType entity represents the type of error this entry
+		describes."
+::= { gtTSErrorEntry 2 }
+
+gtTSErrorSince OBJECT-TYPE
+	SYNTAX DateAndTime
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorSince entity represents the time and date when
+		the given, ongoing error condition started."
+::= { gtTSErrorEntry 3 }
+
+gtTSErrorDescription OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorDescription entity represents a human readable,
+		textual description of the error state."
+::= { gtTSErrorEntry 4 }
+
+gtTSErrorPriority OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorPriority entity represents the error priority as
+		defined in ETR 290, in string form. E.g., continuity count
+		error would be '1.4', PAT error 2 would be '1.3.a', etc.."
+	REFERENCE "ETSI TR 101 290 5.2"
+::= { gtTSErrorEntry 5 }
+
+gtTSErrorSeverity OBJECT-TYPE
+	SYNTAX A78ErrorSeverity
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtTSErrorSeverity entity represents the severity
+		category/categories of this error as defined in the ATSC
+		transport stream verification recommendation A/78. An error can
+		fall under one or more categories at the same time."
+::= { gtTSErrorEntry 6 }
+
+--============================================================================--
+
+--
+-- Compliance groups for the TS monitoring MIB.
+--
+
+gtGeneralStreamMonitoringNotificationsGroup NOTIFICATION-GROUP
+	NOTIFICATIONS {
+		gtTSError,
+		gtTSErrorClear
+	}
+	STATUS current
+	DESCRIPTION
+		"The general stream monitoring notifications group contains
+		notifications for monitoring of transport streams."
+::= { gtTSMonitoringGroups 1 }
+
+gtGeneralStreamMonitoringGroup OBJECT-GROUP
+	OBJECTS {
+		gtTSErrorType,
+		gtTSErrorSince,
+		gtTSErrorDescription,
+		gtTSErrorPriority,
+		gtTSErrorSeverity
+	}
+	STATUS current
+	DESCRIPTION
+		"The general stream monitoring group contains objects for
+		monitoring of transport streams."
+::= { gtTSMonitoringGroups 2 }
+
+
+gtStreamMonitoringBasicCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+		"The compliance statement for Wisi agents that implement
+		monitoring transport streams in GT01/GN50 rack units and/or
+		SFM/MFM modules."
+	MODULE -- This module.
+		MANDATORY-GROUPS {
+			gtGeneralStreamMonitoringNotificationsGroup,
+			gtGeneralStreamMonitoringGroup
+		}
+::= { gtTSMonitoringCompliances 1 }
+
+END

@@ -1,0 +1,280 @@
+
+WISI-GTFMDECODE-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	Unsigned32
+		FROM SNMPv2-SMI
+
+	gtProcessing
+		FROM WISI-TANGRAM-MIB
+
+	DisplayString
+		FROM SNMPv2-TC
+
+	gtModule
+		FROM WISI-GTMODULES-MIB;
+
+--------------------------------------------------------------------------------
+
+gtFMDecodeMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the digital audio to FM radio
+		decoders in a system (rack unit) of a WISI next-generation
+		headend. It provides configuration and measurement information
+		for these decoders."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Added RDS CT source object and removed decode channels object.
+		Updated contact information and module description."
+	REVISION "201212121320Z"
+	DESCRIPTION
+		"Updated contact details."
+	REVISION "201212051200Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtProcessing 4 }
+
+--------------------------------------------------------------------------------
+
+gtFMDecodeNotifications OBJECT IDENTIFIER ::= { gtFMDecodeMIB 0 }
+gtFMDecodeObjects OBJECT IDENTIFIER ::= { gtFMDecodeMIB 1 }
+gtFMDecodeConformance OBJECT IDENTIFIER ::= { gtFMDecodeMIB 2 }
+gtFMDecodeCompliances OBJECT IDENTIFIER ::= { gtFMDecodeConformance 1 }
+gtFMDecodeGroups OBJECT IDENTIFIER ::= { gtFMDecodeConformance 2 }
+
+--============================================================================--
+
+gtFMDecodeNotifyDecodingChanged NOTIFICATION-TYPE
+	OBJECTS { gtFMDecodeAudioStatus }
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeNotifyDecodingChanged notification indicates that
+		the audio decoding status has changed."
+::= { gtFMDecodeNotifications 1 }
+
+--============================================================================--
+
+gtFMDecodeTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtFMDecodeEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeTable table contains a list of all
+		decoders within the GT01/GN50 rack unit."
+::= { gtFMDecodeObjects 2 }
+
+gtFMDecodeEntry OBJECT-TYPE
+	SYNTAX GtFMDecodeEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeEntry table entry represents a
+		decoder instance within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtFMDecodeTableIdx
+	}
+::= { gtFMDecodeTable 1 }
+
+GtFMDecodeEntry ::= SEQUENCE {
+	gtFMDecodeTableIdx Unsigned32,
+	gtFMDecodeSourceID Unsigned32,
+	gtFMDecodeSID Unsigned32,
+	gtFMDecodeAudioLangConf DisplayString,
+	gtFMDecodeAudioPIDConf Unsigned32,
+	gtFMDecodeAudioStereoConf INTEGER,
+	gtFMDecodeAudioTypeConf INTEGER,
+	gtFMDecodeRDSEnable INTEGER,
+	gtFMDecodeRDSPISource INTEGER,
+	gtFMDecodeRDSPIStatic Unsigned32,
+	gtFMDecodeRDSPSSource INTEGER,
+	gtFMDecodeRDSPSStatic DisplayString,
+	gtFMDecodeRDSPTYSource INTEGER,
+	gtFMDecodeRDSPTYStatic Unsigned32,
+	gtFMDecodeRDSCTSource INTEGER,
+	gtFMDecodeAudioStatus INTEGER,
+	gtFMDecodeAudioPID Unsigned32,
+	gtFMDecodeAudioType INTEGER,
+	gtFMDecodeAudioMode INTEGER
+}
+
+gtFMDecodeTableIdx OBJECT-TYPE
+	SYNTAX Unsigned32 (1..256)
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeTableIdx entity represents the numeric index
+		of an decoder on a SFM/MFM module."
+::= { gtFMDecodeEntry 1 }
+
+gtFMDecodeSourceID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeSourceID entity represents the input ID for the
+		service to decode of a decoder within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 2 }
+
+gtFMDecodeSID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeSID entity represents the service ID (SID)
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 3 }
+
+gtFMDecodeAudioLangConf OBJECT-TYPE
+	SYNTAX DisplayString (SIZE (3))
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioLangConf entity represents the prefered audio
+		language of a decoder within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 20 }
+
+gtFMDecodeAudioPIDConf OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioPIDConf entity represents the forced audio PID
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 21 }
+
+gtFMDecodeAudioStereoConf OBJECT-TYPE
+	SYNTAX INTEGER { stereo(1), dualLeft(2), dualRight(3), prologic(4), dualMono(5) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeVideoTypeConf entity represents the forced stereo
+		mode of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 22 }
+
+gtFMDecodeAudioTypeConf OBJECT-TYPE
+	SYNTAX INTEGER { mpeg1(1), heAAC(2), mpegAAC(3), mpeg2(4), ac3(5), eac3(6), dts(7) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioTypeConf entity represents the forced audio
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 23 }
+
+gtFMDecodeRDSEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), active(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeSubtitlingEnable entity represents the enabling of
+		RDS of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 30 }
+
+gtFMDecodeRDSPISource OBJECT-TYPE
+	SYNTAX INTEGER { uecp(1), manual(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPISource entity represents the source of
+		RDS PI data of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 31 }
+
+gtFMDecodeRDSPIStatic OBJECT-TYPE
+	SYNTAX Unsigned32 ( 0..65535 )
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPIStatic entity represents the static PI data of
+		 the decoder if gtFMDecodeRDSPISource is set to manual(2)."
+::= { gtFMDecodeEntry 32 }
+
+gtFMDecodeRDSPSSource OBJECT-TYPE
+	SYNTAX INTEGER { uecp(1), manual(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPSSource entity represents the source of
+		RDS PS data of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 33 }
+
+gtFMDecodeRDSPSStatic OBJECT-TYPE
+	SYNTAX DisplayString
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPSStatic entity represents the static PS data of
+		 the decoder if gtFMDecodeRDSPSSource is set to manual(2)."
+::= { gtFMDecodeEntry 34 }
+
+gtFMDecodeRDSPTYSource OBJECT-TYPE
+	SYNTAX INTEGER { uecp(1), manual(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPTYSource entity represents the source of
+		RDS PTY data of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 35 }
+
+gtFMDecodeRDSPTYStatic OBJECT-TYPE
+	SYNTAX Unsigned32 ( 0..31 )
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSPTYStatic entity represents the static PTY data of
+		 the decoder if gtFMDecodeRDSPTYSource is set to manual(2)."
+::= { gtFMDecodeEntry 36 }
+
+gtFMDecodeRDSCTSource OBJECT-TYPE
+	SYNTAX INTEGER { off(1), uecp(2), system(3) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeRDSCTSource entity represents the source of
+		 RDS CT data of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 37 }
+
+gtFMDecodeAudioStatus OBJECT-TYPE
+	SYNTAX INTEGER { notrunning(1), running(2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioStatus entity represents the audio running status
+		of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 120 }
+
+gtFMDecodeAudioPID OBJECT-TYPE
+	SYNTAX Unsigned32 (0..65535)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioPID entity represents the audio PID in use
+		of a decoder within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 121 }
+
+gtFMDecodeAudioType OBJECT-TYPE
+	SYNTAX INTEGER { mpeg1(1), heaac(2), mpegaac(3), mpeg2(4) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioType entity represents the audio PID in use
+		type of the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 122 }
+
+gtFMDecodeAudioMode OBJECT-TYPE
+	SYNTAX INTEGER { stereo(1), dualLeft(2), dualRight(3), prologic(4), dualMono(5) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMDecodeAudioMode entity represents the type of audio
+		currently decoding on the decoder output within the GT01/GN50 rack unit."
+::= { gtFMDecodeEntry 123 }
+
+--============================================================================--
+END

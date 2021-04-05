@@ -1,0 +1,151 @@
+
+WISI-GTANALYSIS-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, NOTIFICATION-GROUP, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	Integer32, Unsigned32
+		FROM SNMPv2-SMI
+
+	gtModule, gtChannel, gtModuleSlot
+		FROM WISI-GTMODULES-MIB
+
+	gtTS
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtAnalysisMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"The MIB module represents state informations about the MPEG Program Specific Information
+		(PSI) tables in the DVB transport streams within a GT01/GN50 module."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Updated contact information."
+	REVISION "201404300000Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtTS 1 }
+
+--------------------------------------------------------------------------------
+
+gtAnalysisNotifications OBJECT IDENTIFIER ::= { gtAnalysisMIB 0 }
+gtAnalysisObjects OBJECT IDENTIFIER ::= { gtAnalysisMIB 1 }
+gtAnalysisConformance OBJECT IDENTIFIER ::= { gtAnalysisMIB 2 }
+gtAnalysisCompliances OBJECT IDENTIFIER ::= { gtAnalysisConformance 1 }
+gtAnalysisGroups OBJECT IDENTIFIER ::= { gtAnalysisConformance 2 }
+
+--============================================================================--
+
+gtAnalysisNotifyPATMissing NOTIFICATION-TYPE
+    OBJECTS { gtModuleSlot, gtAnalysisInPATPresent }
+    STATUS  current
+    DESCRIPTION
+	    "The gtAnalysisNotifyPATMissing notification indicates that the
+	    defined repetition cycle of the PAT in a DVB input stream is
+	    outside the specification."
+::= { gtAnalysisNotifications 1 }
+
+
+--============================================================================--
+
+gtNumAnalysisIn OBJECT-TYPE
+	SYNTAX Unsigned32 (0..255)
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtNumAnalysis entity represents the number of
+		DVB input streams within the GT01/GN50 module.
+		The related entries are provided by gtAnalysisTable."
+::= { gtAnalysisObjects 1 }
+
+--------------------------------------------------------------------------------
+
+gtAnalysisInTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtAnalysisInEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtAnalysisInTable table contains a list of all
+		DVB input streams within the GT01/GN50 module.
+		The number of entries is provided by gtNumAnalysisIn."
+::= { gtAnalysisObjects 2 }
+
+gtAnalysisInEntry OBJECT-TYPE
+	SYNTAX GtAnalysisInEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtAnalysisInEntry table entry represents a
+		DVB input stream within the GT01/GN50 module.
+		The number of entries is provided by gtNumAnalysisIn."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtAnalysisInTable 1 }
+
+GtAnalysisInEntry ::= SEQUENCE {
+	gtAnalysisInPATPresent INTEGER
+}
+
+gtAnalysisInPATPresent OBJECT-TYPE
+    SYNTAX 	INTEGER { notPresent (1), present (2) }
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtAnalysisInPATPresent entity represents the state,
+		 if the defined repetition cycle of the PAT in a DVB input stream
+		 is inside the DVB time specification.
+		 1 = PAT not present -> PAT repetition cycle is outside the DVB specification.
+		 2 = PAT present -> PAT repetition cyle is DVB compliant."
+::= { gtAnalysisInEntry 1 }
+
+--------------------------------------------------------------------------------
+
+gtAnalysisMIBCompliance MODULE-COMPLIANCE
+	STATUS current
+	DESCRIPTION
+		"The compliance statement for the analysis entities."
+	MODULE
+	MANDATORY-GROUPS {
+		gtAnalysisGroup,
+		gtAnalysisBasicNotificationsGroup
+	}
+::= { gtAnalysisCompliances 1 }
+
+--------------------------------------------------------------------------------
+
+gtAnalysisGroup OBJECT-GROUP
+	OBJECTS {
+		gtNumAnalysisIn,
+		gtAnalysisInPATPresent
+	}
+	STATUS current
+	DESCRIPTION
+		"The gtAnalysisGroup group defines mandatory entities."
+::= { gtAnalysisGroups 1 }
+
+--------------------------------------------------------------------------------
+
+gtAnalysisBasicNotificationsGroup NOTIFICATION-GROUP
+	NOTIFICATIONS {
+		gtAnalysisNotifyPATMissing
+	}
+	STATUS current
+	DESCRIPTION
+		"The gtAnalysisBasicNotificationsGroup group defines
+		notification objects which are mandatory."
+::= { gtAnalysisGroups 2 }
+
+--============================================================================--
+END
+

@@ -1,0 +1,183 @@
+
+WISI-GTFM-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+	MODULE-COMPLIANCE, OBJECT-GROUP
+		FROM SNMPv2-CONF
+
+	MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+	Unsigned32, Integer32
+		FROM SNMPv2-SMI
+
+	FloatingPoint
+		FROM WISI-TANGRAM-MIB
+
+	RowStatus, DisplayString
+		FROM SNMPv2-TC
+
+	gtModule, gtChannel
+		FROM WISI-GTMODULES-MIB
+
+	gtRF
+		FROM WISI-TANGRAM-MIB;
+
+--------------------------------------------------------------------------------
+
+gtFMMIB MODULE-IDENTITY
+	LAST-UPDATED "201609080000Z"
+	ORGANIZATION "WISI Communications GmbH & Co. KG"
+	CONTACT-INFO
+		"https://wisiconnect.tv/"
+	DESCRIPTION
+		"This MIB module represents the FM radio interfaces in a system
+		(rack unit) of a WISI next-generation headend. It provides
+		configuration and measurement information for these
+		interfaces."
+
+	REVISION "201609080000Z"
+	DESCRIPTION
+		"Added object for FM audio deviation and removed out channels
+		and out FIFO objects. Updated contact information and module
+		description."
+	REVISION "201212041200Z"
+	DESCRIPTION
+		"Adjusted for Chameleon"
+	REVISION "201112191200Z"
+	DESCRIPTION
+		"Initial version."
+::= { gtRF 2 }
+
+--------------------------------------------------------------------------------
+
+gtFMNotifications OBJECT IDENTIFIER ::= { gtFMMIB 0 }
+gtFMObjects OBJECT IDENTIFIER ::= { gtFMMIB 1 }
+gtFMConformance OBJECT IDENTIFIER ::= { gtFMMIB 2 }
+gtFMCompliances OBJECT IDENTIFIER ::= { gtFMConformance 1 }
+gtFMGroups OBJECT IDENTIFIER ::= { gtFMConformance 2 }
+
+--============================================================================--
+
+gtFMNotifyLevelChanged NOTIFICATION-TYPE
+	OBJECTS { gtFMoutLevel }
+	STATUS current
+	DESCRIPTION
+		"The gtFMNotifyLevelChanged notification indicates that
+		the carrier level of the FM output has changed."
+::= { gtFMNotifications 1 }
+
+--============================================================================--
+
+gtFMoutTable OBJECT-TYPE
+	SYNTAX SEQUENCE OF GtFMoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutTable table contains a list of all
+		FM audio channels within the GT01/GN50 rack unit."
+::= { gtFMObjects 4 }
+
+gtFMoutEntry OBJECT-TYPE
+	SYNTAX GtFMoutEntry
+	MAX-ACCESS not-accessible
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutEntry table entry represents an
+		FM audio channel within the GT01/GN50 rack unit."
+	INDEX {
+		gtModule,
+		gtChannel
+	}
+::= { gtFMoutTable 1 }
+
+GtFMoutEntry ::= SEQUENCE {
+	gtFMoutRowStatus RowStatus,
+	gtFMoutConnector Unsigned32,
+        gtFMoutEnable INTEGER,
+        gtFMoutDecoder OBJECT IDENTIFIER,
+	gtFMoutConfigLevel Unsigned32,
+        gtFMoutLevel FloatingPoint,
+	gtFMoutFrequency Unsigned32,
+	gtFMoutAudioDeviation Integer32
+}
+
+gtFMoutRowStatus OBJECT-TYPE
+	SYNTAX RowStatus
+	MAX-ACCESS read-create
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutRowStatus entity represents the row/entry status
+		of a FM audio channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 1 }
+
+gtFMoutConnector OBJECT-TYPE
+	SYNTAX Unsigned32
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutConnector entity represents related RF connector
+		of a FM audio channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 2 }
+
+gtFMoutEnable OBJECT-TYPE
+	SYNTAX INTEGER { disabled(1), active(2) }
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutEnable entity represents the enable setting
+		of a FM channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 3 }
+
+gtFMoutDecoder OBJECT-TYPE
+	SYNTAX OBJECT IDENTIFIER
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutDecoder referer to the settings table specific
+                to the decoder used by the current FM output on a SFM/MFM module."
+::= { gtFMoutEntry 4 }
+
+gtFMoutConfigLevel OBJECT-TYPE
+	SYNTAX Unsigned32 (1..1000)
+	UNITS "1/10 dBuV"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutConfigLevel entity represents the configured output
+		level of an FM channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 5 }
+
+gtFMoutLevel OBJECT-TYPE
+	SYNTAX FloatingPoint
+	UNITS "dBuV"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutLevel entity represents the measured RF level
+		of a FM channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 6 }
+
+gtFMoutFrequency OBJECT-TYPE
+	SYNTAX Unsigned32 (87500..108000)
+	UNITS "kHz"
+	MAX-ACCESS read-write
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutFrequency entity represents the output frequency
+		of a FM channel within the GT01/GN50 rack unit."
+::= { gtFMoutEntry 8 }
+
+gtFMoutAudioDeviation OBJECT-TYPE
+	SYNTAX Integer32 (-6..6)
+	UNITS "dB"
+	MAX-ACCESS read-only
+	STATUS current
+	DESCRIPTION
+		"The gtFMoutAudioDeviation entity represents the audio
+		deviation setting of an FM channel within the GT01/GN50 rack
+		unit."
+::= { gtFMoutEntry 9 }
+
+--============================================================================--
+END
+

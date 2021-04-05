@@ -1,0 +1,429 @@
+-- vi:tabstop=4 shiftwidth=0 textwidth=79 et
+WISI-GTDESCRAMBLE-MIB DEFINITIONS ::= BEGIN
+--============================================================================--
+
+IMPORTS
+    MODULE-COMPLIANCE, OBJECT-GROUP, NOTIFICATION-GROUP
+        FROM SNMPv2-CONF
+
+    MODULE-IDENTITY, NOTIFICATION-TYPE, OBJECT-TYPE,
+    Unsigned32, Counter32
+        FROM SNMPv2-SMI
+
+    gtProcessing, Millionths
+        FROM WISI-TANGRAM-MIB
+
+    TruthValue, DisplayString
+        FROM SNMPv2-TC
+
+    gtModule
+        FROM WISI-GTMODULES-MIB;
+
+--------------------------------------------------------------------------------
+
+gtDescrambleMIB MODULE-IDENTITY
+    LAST-UPDATED "201611230000Z"
+    ORGANIZATION "WISI Communications GmbH & Co. KG"
+    CONTACT-INFO
+        "https://wisiconnect.tv/"
+    DESCRIPTION
+        "This MIB module represents the content descramblers in a system (rack
+        unit) of a WISI next-generation headend. It provides configuration and
+        measurement information for these interfaces."
+
+    REVISION "201611230000Z"
+    DESCRIPTION
+        "Added gtCISlotTable, gtDescramblerTable, gtCAMTable and CAM enabled
+        trap."
+    REVISION "201609080000Z"
+    DESCRIPTION
+        "Updated contact information and module description."
+    REVISION "201403101000Z"
+    DESCRIPTION
+        "Initial version."
+::= { gtProcessing 2 }
+
+--------------------------------------------------------------------------------
+
+gtDescrambleNotifications OBJECT IDENTIFIER ::= { gtDescrambleMIB 0 }
+gtDescrambleObjects OBJECT IDENTIFIER ::= { gtDescrambleMIB 1 }
+gtDescrambleConformance OBJECT IDENTIFIER ::= { gtDescrambleMIB 2 }
+gtDescrambleCompliances OBJECT IDENTIFIER ::= { gtDescrambleConformance 1 }
+gtDescrambleGroups OBJECT IDENTIFIER ::= { gtDescrambleConformance 2 }
+
+--============================================================================--
+
+gtDescrambleNotifyServiceDescramblingChanged NOTIFICATION-TYPE
+    OBJECTS { gtDescramblerServiceDescramblingStatus }
+    STATUS current
+    DESCRIPTION
+        "The gtDescrambleNotifyServiceDescramblingChanged notification indicates
+        that the video descrambling status of the service has changed."
+::= { gtDescrambleNotifications 1 }
+
+gtDescrambleNotifyWatchdogReset NOTIFICATION-TYPE
+    OBJECTS { gtCAMWatchdogResetCounter }
+    STATUS current
+    DESCRIPTION
+        "The gtDescrambleNotifyWatchdogReset notification indicates that the
+        descrambler watchdog has reset its descrambler due to the watchdog
+        timing out."
+::= { gtDescrambleNotifications 2 }
+
+gtDescrambleNotifyCIModulePresent NOTIFICATION-TYPE
+    OBJECTS { gtCISlotModulePresent }
+    STATUS current
+    DESCRIPTION
+        "The gtDescrambleNotifyCIModulePresent notification indicates that a
+        conditional access module (CAM) has been connected to, or disconnected
+        from, a CI slot."
+::= { gtDescrambleNotifications 3 }
+
+--============================================================================--
+
+gtCISlotTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF GtCISlotEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtCISlotTable table contains a list of all CI slots within the
+        GT01/GN50 rack unit."
+::= { gtDescrambleObjects 1 }
+
+gtCISlotEntry OBJECT-TYPE
+    SYNTAX GtCISlotEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtCISlotEntry represents a CI slot within the GT01/GN50 rack
+        unit."
+    INDEX {
+        gtModule,
+        gtCISlot
+    }
+::= { gtCISlotTable 1 }
+
+GtCISlotEntry ::= SEQUENCE {
+    gtCISlot Unsigned32,
+    gtCISlotModulePresent TruthValue,
+    gtCISlotReset INTEGER,
+    gtCISlotClock Millionths
+}
+
+gtCISlot OBJECT-TYPE
+    SYNTAX Unsigned32
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtCISlot entity represents the numeric index of a CI slots in an
+        SFM/MFM module."
+::= { gtCISlotEntry 1 }
+
+gtCISlotModulePresent OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtCISlotModulePresent entity represents whether or not there is a
+        successfully initialized CAM connected to this CI slot."
+::= { gtCISlotEntry 2 }
+
+gtCISlotReset OBJECT-TYPE
+    SYNTAX INTEGER { running(1), reset(2) }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCISlotReset entity can be used to reset the CAM connected to a
+        CI slot of the SFM/MFM module within the GT01/GN50 rack unit."
+::= { gtCISlotEntry 3 }
+
+gtCISlotClock OBJECT-TYPE
+    SYNTAX Millionths (6940000|7810000|8930000|10420000|12500000)
+    UNITS "MHz"
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCISlotClock entity represents the clock frequency at which to
+        run the module connected to a CI slot of the SFM/MFM module within the
+        GT01/GN50 rack unit."
+::= { gtCISlotEntry 4 }
+
+--------------------------------------------------------------------------------
+
+gtDescramblerTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF GtDescramblerEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerTable table contains a list of all conditional
+        access modules (CAMs) currently connected to CI slots of the SFM/MFM
+        modules of the GT01/GN50 rack unit."
+::= { gtDescrambleObjects 2 }
+
+gtDescramblerEntry OBJECT-TYPE
+    SYNTAX GtDescramblerEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerEntry entry represents a conditional access module
+        (CAM) connected to a CI slot of the SFM/MFM module within the GT01/GN50
+        rack unit."
+    INDEX {
+        gtModule,
+        gtDescramblerIdx
+    }
+::= { gtDescramblerTable 1 }
+
+GtDescramblerEntry ::= SEQUENCE {
+    gtDescramblerIdx Unsigned32,
+    gtDescramblerName DisplayString
+}
+
+gtDescramblerIdx OBJECT-TYPE
+    SYNTAX Unsigned32
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerIdx entity represents the index of a descrambler in
+        the SFM/MFM module within the GT01/GN50 rack unit."
+::= { gtDescramblerEntry 1 }
+
+gtDescramblerName OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerName entity represents the human readable
+        descrambler name for a CAM in the SFM/MFM module within the GT01/GN50
+        rack unit."
+::= { gtDescramblerEntry 2 }
+
+--------------------------------------------------------------------------------
+
+gtCAMTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF GtCAMEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtCAMTable table contains a list of all conditional access module
+        (CAM) descramblers currently configured on the SFM/MFM modules of the
+        GT01/GN50 rack unit."
+::= { gtDescrambleObjects 3 }
+
+gtCAMEntry OBJECT-TYPE
+    SYNTAX GtCAMEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtCAMEntry entry represents a conditional access module (CAM)
+        connected to a CI slot of the SFM/MFM module within the GT01/GN50 rack
+        unit."
+    INDEX {
+        gtModule,
+        gtDescramblerIdx
+    }
+::= { gtCAMTable 1 }
+
+GtCAMEntry ::= SEQUENCE {
+    gtCAMCISlot Unsigned32,
+    gtCAMSourceType INTEGER,
+    gtCAMSource Unsigned32,
+    gtCAMWatchdogEnabled TruthValue,
+    gtCAMWatchdogTimeout Unsigned32,
+    gtCAMWatchdogResetCounter Counter32
+}
+
+gtCAMCISlot OBJECT-TYPE
+    SYNTAX Unsigned32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtCAMCISlot entity represents the slot in which this cam is
+        connected in the SFM/MFM module within the GT01/GN50 rack unit."
+::= { gtCAMEntry 1 }
+
+gtCAMSourceType OBJECT-TYPE
+    SYNTAX INTEGER { input(1), remux(2) }
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCAMSourceType entity represents the type of input that can
+        descramble contents through a CAM in the SFM/MFM module within the
+        GT01/GN50 rack unit."
+::= { gtCAMEntry 2 }
+
+gtCAMSource OBJECT-TYPE
+    SYNTAX Unsigned32
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCAMSource entity represents the ID of the source (of the type
+        specified by gtCAMSourceType) of a CAM in the SFM/MFM module within the
+        GT01/GN50 rack unit.
+        
+        If the source type is input(1) the source value represents the
+        gtInputsTableIdx of an input in the SFM/MFM module within a GT01/GN50
+        rack unit."
+::= { gtCAMEntry 3 }
+
+gtCAMWatchdogEnabled OBJECT-TYPE
+    SYNTAX TruthValue
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCAMWatchdogEnabled entity represents whether or not the watchdog
+        timer for this descrambler on the SFM/MFM module in the GT01/GN50 rack
+        unit is enabled.
+        
+        If the descrambler is active and the watchdog is enabled, once the
+        watchdog timeout occurs without the descrambler letting the watchdog
+        know it's still alive and well, the descrambler will be reset.
+        
+        This feature is currently only available for CAM descramblers."
+::= { gtCAMEntry 4 }
+
+gtCAMWatchdogTimeout OBJECT-TYPE
+    SYNTAX Unsigned32 (10..254)
+    UNITS "s"
+    MAX-ACCESS read-write
+    STATUS current
+    DESCRIPTION
+        "The gtCAMWatchdogTimeout entity represents the time in seconds
+        after which the watchdog will reset the descrambler if it hasn't been
+        told the descrambler is still OK."
+::= { gtCAMEntry 5 }
+
+gtCAMWatchdogResetCounter OBJECT-TYPE
+    SYNTAX Counter32
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtCAMWatchdogResetCounter entity represents the number of
+        times the watchdog reset has been triggered for a descrambler since the
+        SFM/MFM module in the GT01/GN50 rack unit booted up."
+::= { gtCAMEntry 6 }
+
+--------------------------------------------------------------------------------
+
+gtDescramblerServiceTable OBJECT-TYPE
+    SYNTAX SEQUENCE OF GtDescramblerServiceEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceTable table contains a list of all
+        descramblers within the GT01/GN50 rack unit."
+::= { gtDescrambleObjects 4 }
+
+gtDescramblerServiceEntry OBJECT-TYPE
+    SYNTAX GtDescramblerServiceEntry
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceEntry table entry represents
+        a descrambler within the GT01/GN50 rack unit.
+        The number of entries is provided by gtDescramblerServices."
+    INDEX {
+        gtModule,
+        gtDescramblerIdx,
+        gtDescramblerServiceTableIdx
+    }
+::= { gtDescramblerServiceTable 1 }
+
+GtDescramblerServiceEntry ::= SEQUENCE {
+    gtDescramblerServiceTableIdx Unsigned32,
+    gtDescramblerServiceSourceID Unsigned32,
+    gtDescramblerServiceSID Unsigned32,
+    gtDescramblerServiceDescramblingStatus INTEGER
+}
+
+gtDescramblerServiceTableIdx OBJECT-TYPE
+    SYNTAX Unsigned32 (1..256)
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceTableIdx entity represents the numeric index
+        of a descrambled service on a SFM/MFM module."
+::= { gtDescramblerServiceEntry 1 }
+
+gtDescramblerServiceSourceID OBJECT-TYPE
+    SYNTAX Unsigned32 (0..65535)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceSourceID entity represents the input ID for the
+        service to descramble within the GT01/GN50 rack unit."
+::= { gtDescramblerServiceEntry 2 }
+
+gtDescramblerServiceSID OBJECT-TYPE
+    SYNTAX Unsigned32 (0..65535)
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceSID entity represents the service ID (SID)
+        of a descrambler within the GT01/GN50 rack unit."
+::= { gtDescramblerServiceEntry 3 }
+
+gtDescramblerServiceDescramblingStatus OBJECT-TYPE
+    SYNTAX INTEGER { scrambled(1), descrambled(2) }
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION
+        "The gtDescramblerServiceDescramblingStatus entity represents the
+         status of video descrambling for a service."
+::= { gtDescramblerServiceEntry 4 }
+
+
+--============================================================================--
+
+--
+-- Compliance groups for the Descramble MIB.
+--
+
+gtGeneralDescrambleGroup OBJECT-GROUP
+    OBJECTS {
+        gtCISlotModulePresent,
+        gtCISlotReset,
+        gtCISlotClock,
+        gtDescramblerName,
+        gtCAMCISlot,
+        gtCAMSourceType,
+        gtCAMSource,
+        gtCAMWatchdogEnabled,
+        gtCAMWatchdogTimeout,
+        gtCAMWatchdogResetCounter,
+        gtDescramblerServiceSourceID,
+        gtDescramblerServiceSID,
+        gtDescramblerServiceDescramblingStatus
+    }
+    STATUS current
+    DESCRIPTION
+        "The general descramble group contains the configuration and status
+        objects for descramblers."
+::= { gtDescrambleGroups 1 }
+
+gtGeneralDescrambleNotificationsGroup NOTIFICATION-GROUP
+    NOTIFICATIONS {
+        gtDescrambleNotifyServiceDescramblingChanged,
+        gtDescrambleNotifyWatchdogReset,
+        gtDescrambleNotifyCIModulePresent
+    }
+    STATUS current
+    DESCRIPTION
+        "The general descramble notifications group contains the basic
+        notifications that should be implemented by all devices with
+        descramblers."
+::= { gtDescrambleGroups 2 }
+
+gtDescrambleBasicCompliance MODULE-COMPLIANCE
+    STATUS current
+    DESCRIPTION
+        "The compliance statement for Wisi agents that have descramblers in
+        GT01/GN50 rack units and/or SFM/MFM modules."
+    MODULE -- This module.
+        MANDATORY-GROUPS {
+            gtGeneralDescrambleGroup,
+            gtGeneralDescrambleNotificationsGroup
+        }
+::= { gtDescrambleCompliances 1 }
+
+END
